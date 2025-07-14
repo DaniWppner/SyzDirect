@@ -100,9 +100,9 @@ index 187ba1b80bda..4222f6300a51 100644
  			return mode;
 -		if ((unsigned long)remote_arg->area_size >
 -		    LONG_MAX / sizeof(unsigned long))
-+		if ((unsigned long)remote_arg->area_size > 
++		if ((unsigned long)remote_arg->area_size >
 +		LONG_MAX / sizeof(unsigned long) ||
-+		(unsigned long)remote_arg->area_size < DISTBLOCKSIZE / 2)			
++		(unsigned long)remote_arg->area_size < DISTBLOCKSIZE / 2)
  			return -EINVAL;
  		kcov->mode = mode;
  		t->kcov = kcov;
@@ -174,7 +174,7 @@ index 187ba1b80bda..4222f6300a51 100644
 +			WRITE_ONCE(dst_dt_entries[i], READ_ONCE(dst_dt_entries[i]) + READ_ONCE(src_dt_entries[i]));
 +		}
 +	}
-+		
++
  	dst_occupied = count_size + (dst_len << entry_size_log);
  	dst_free = dst_area_size * word_size - dst_occupied;
  	bytes_to_move = min(dst_free, src_len << entry_size_log);
