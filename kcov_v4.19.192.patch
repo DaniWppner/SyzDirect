@@ -1,0 +1,104 @@
+From 624d64c1988aa58e9306fca9269424e0ad9233d6 Mon Sep 17 00:00:00 2001
+From: Daniel <danielituswapp@gmail.com>
+Date: Fri, 11 Jul 2025 15:16:19 -0300
+Subject: [PATCH] partial patch
+
+---
+ include/linux/kcov.h |  2 ++
+ kernel/kcov.c        | 28 ++++++++++++++++++++++++----
+ 2 files changed, 26 insertions(+), 4 deletions(-)
+
+diff --git a/include/linux/kcov.h b/include/linux/kcov.h
+index b76a1807028d..bdb03dde00c6 100644
+--- a/include/linux/kcov.h
++++ b/include/linux/kcov.h
+@@ -26,6 +26,7 @@ enum kcov_mode {
+ 
+ void kcov_task_init(struct task_struct *t);
+ void kcov_task_exit(struct task_struct *t);
++void notrace kcov_mark_block(u32 i);
+ 
+ #define kcov_prepare_switch(t)			\
+ do {						\
+@@ -43,6 +44,7 @@ static inline void kcov_task_init(struct task_struct *t) {}
+ static inline void kcov_task_exit(struct task_struct *t) {}
+ static inline void kcov_prepare_switch(struct task_struct *t) {}
+ static inline void kcov_finish_switch(struct task_struct *t) {}
++static inline void kcov_mark_block(u32 i) {}
+ 
+ #endif /* CONFIG_KCOV */
+ #endif /* _LINUX_KCOV_H */
+diff --git a/kernel/kcov.c b/kernel/kcov.c
+index c2277dbdbfb1..917330bd1386 100644
+--- a/kernel/kcov.c
++++ b/kernel/kcov.c
+@@ -25,6 +25,8 @@
+ /* Number of 64-bit words written per one comparison: */
+ #define KCOV_WORDS_PER_CMP 4
+ 
++#define DISTBLOCKSIZE 300
++
+ /*
+  * kcov descriptor (one per opened debugfs file).
+  * State transitions of the descriptor:
+@@ -90,27 +92,45 @@ static notrace unsigned long canonicalize_ip(unsigned long ip)
+  * Entry point from instrumented code.
+  * This is called once per basic-block/edge.
+  */
+-void notrace __sanitizer_cov_trace_pc(void)
++void notrace __sanitizer_cov_trace_pc(u32 dt)
+ {
+ 	struct task_struct *t;
+ 	unsigned long *area;
+ 	unsigned long ip = canonicalize_ip(_RET_IP_);
+ 	unsigned long pos;
++	u32* dt_area;
+ 
+ 	t = current;
+ 	if (!check_kcov_mode(KCOV_MODE_TRACE_PC, t))
+ 		return;
+ 
+-	area = t->kcov_area;
++	dt_area = t->kcov_area;
++	area = (unsigned long*)((u32*)t->kcov_area + DISTBLOCKSIZE);
+ 	/* The first 64-bit word is the number of subsequent PCs. */
+ 	pos = READ_ONCE(area[0]) + 1;
+-	if (likely(pos < t->kcov_size)) {
++	if (likely(pos < t->kcov_size - DISTBLOCKSIZE / 2)) {
+ 		area[pos] = ip;
+ 		WRITE_ONCE(area[0], pos);
+ 	}
++	if (dt < READ_ONCE(dt_area[0]))
++		WRITE_ONCE(dt_area[0], dt);
+ }
+ EXPORT_SYMBOL(__sanitizer_cov_trace_pc);
+ 
++void notrace kcov_mark_block(u32 i)
++{
++	struct task_struct *t;
++	u32 *dt_area;
++
++	t = current;
++	if (!check_kcov_mode(KCOV_MODE_TRACE_PC, t))
++		return;
++
++	dt_area = (u32*)t->kcov_area + 1;
++	WRITE_ONCE(dt_area[i], READ_ONCE(dt_area[i]) + 1);
++}
++EXPORT_SYMBOL(kcov_mark_block);
++
+ #ifdef CONFIG_KCOV_ENABLE_COMPARISONS
+ static void notrace write_comp_data(u64 type, u64 arg1, u64 arg2, u64 ip)
+ {
+@@ -359,7 +379,7 @@ static int kcov_ioctl_locked(struct kcov *kcov, unsigned int cmd,
+ 		 * that must not overflow.
+ 		 */
+ 		size = arg;
+-		if (size < 2 || size > INT_MAX / sizeof(unsigned long))
++		if (size < DISTBLOCKSIZE / 2 + 2 || size > INT_MAX / sizeof(unsigned long))
+ 			return -EINVAL;
+ 		kcov->size = size;
+ 		kcov->mode = KCOV_MODE_INIT;
+-- 
+2.43.0
+
