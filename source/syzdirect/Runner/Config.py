@@ -217,8 +217,11 @@ def PrepareArgParser():
     else:
         LinuxSrcTemplate=None
 
-    CustomKcovPatch=os.path.abspath(arg.kcov_patch)
-    assert os.path.exists(CustomKcovPatch), f"custom kcov patch at {CustomKcovPatch} does not exist"
+    if arg.kcov_patch is not None:
+        CustomKcovPatch = os.path.abspath(arg.kcov_patch)
+        assert os.path.exists(CustomKcovPatch), f"custom kcov patch at {CustomKcovPatch} does not exist"
+    else:
+        CustomKcovPatch = None
 
     return arg.actions
 

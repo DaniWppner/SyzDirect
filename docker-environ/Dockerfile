@@ -13,7 +13,12 @@ RUN grep deb /etc/apt/sources.list | \
 # Install compiler, python, subversion, c++ libraries and wget,curl,etc. utilities.
 RUN apt-get update && \
     apt-get install -y --no-install-recommends ca-certificates gnupg \
-           build-essential cmake make python3 python3-pip zlib1g wget subversion unzip git libboost-dev curl && \
+           # These are needed to build LLVM
+           build-essential cmake make zlib1g wget subversion unzip git \
+           # These are needed to build Linux kernel
+           flex bison bc libelf-dev libssl-dev \
+           #These are needed to build Syzdirect or Syzkaller
+           curl libboost-dev python3 python3-pip && \
     rm -rf /var/lib/apt/lists/*
 
 # Install python dependencies of SyzDirect
