@@ -18,10 +18,14 @@ def PrepareSourceCode():
         checkoutcmd=f"cd {caseSrcDir} && git checkout -f {kernel_commit}"
         Config.ExecuteCMD(checkoutcmd)
         
-        applykcovcmd=f"cd {caseSrcDir} && git apply {Config.KcovPatchPath}"
-        if Config.ExecuteCMD(applykcovcmd)[1].find("patch failed") != -1:
-            Config.logging.error(f"[case {caseIdx}] Fail to apply kcov patch!!! Please manually apply!!!")
-        
+        patch_path = Config.CustomKcovPatch if Config.CustomKcovPatch is not None else Conf.KcovPatchPath
+        applykcovcmd=f"cd {caseSrcDir} && git apply {patch_path}"
+        applly_patch_error = Config.ExecuteCMD(applykcovcmd)[1]
+        if applly_patch_error:
+            if applly_patch_error.find("patch failed") != -1:
+                Config.logging.error(f"[case {caseIdx}] Fail to apply kcov patch!!! Please manually apply!!!\nError:\n{applly_patch_error}")
+            else:
+                Config.logging.error(f"[case {caseIdx}] kcov patch malformed!!!\n{applly_patch_error}\n Please manually check!!!")
         
         Config.logging.info(f"[case {caseIdx}] Finished preparing source code")
         

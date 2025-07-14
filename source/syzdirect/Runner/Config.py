@@ -18,7 +18,7 @@ class Actions(Enum):
 
 ### Logging
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     # filename="syzdirect.log",
     filemode="a",
     format="%(asctime)s - %(levelname)s: %(message)s"
@@ -165,8 +165,8 @@ def PreparePathVariables():
     
     ############### SET BY USER
     global CleanImageTemplatePath,KeyPath
-    CleanImageTemplatePath=""
-    KeyPath=""
+    CleanImageTemplatePath="/src/kernelimage/bullseye.img"
+    KeyPath="/src/kernelimage/bullseye.id_rsa"
     assert os.path.exists(CleanImageTemplatePath), "Please offer clean image path"
     assert os.path.exists(KeyPath), "Please offer key path"
     
@@ -184,7 +184,7 @@ def ParseTargetFunctionsInfoFile(caseIdx):
     
 #### arg parser
 def PrepareArgParser():
-    global WorkdirPrefix,DatasetFile,LinuxSrcTemplate,CPUNum,FuzzRounds,FuzzUptime
+    global WorkdirPrefix,DatasetFile,LinuxSrcTemplate,CPUNum,FuzzRounds,FuzzUptime,CustomKcovPatch
     logging.debug("Start preparing arg parser")
     parser=argparse.ArgumentParser(description='This is the runner script for Syzdirect.')
     parser.add_argument('actions',type=Actions, nargs='+', metavar="/".join([a.value for a in Actions]),help='actions to be chose from')
@@ -195,6 +195,7 @@ def PrepareArgParser():
     parser.add_argument('-uptime',type=int,default=24,help="fuzzing timeout(hours) for every case, default set to 24 ")
 
     parser.add_argument('-linux-repo-template',dest="linux_template",default="linux",type=str,help="linux repository template can also be given to save time cloning Linux repository",required=False)
+    parser.add_argument('-custom-kcov-patch',dest="kcov_patch",default=None,type=str,help="a custom kcov patch can be given for linux versions where the default doesn't work",required=False)
     
     
     arg=parser.parse_args()
@@ -216,6 +217,9 @@ def PrepareArgParser():
     else:
         LinuxSrcTemplate=None
 
+    CustomKcovPatch=os.path.abspath(arg.kcov_patch)
+    assert os.path.exists(CustomKcovPatch), f"custom kcov patch at {CustomKcovPatch} does not exist"
+
     return arg.actions
 
 def PrepareBinary():
@@ -226,17 +230,18 @@ def PrepareBinary():
         # print(ExecuteCMD(makecmd)[0])
         ExecuteBigCMD(makecmd)
     assert os.path.exists(ClangPath), "Fails to build customized llvm(clang)"
-        
+    logging.info(f"Customized llvm(clang) built and installed at {ClangPath}")
+
     ### function_model
     logging.info("Building tool for function modeling")
-    build_function_model_cmd=f'cd {FunctionModelDirRoot} && make clean && make LLVM_BUILD={LLVMBuildDir}'
+    build_function_model_cmd=f'cd {FunctionModelDirRoot} && make LLVM_BUILD={LLVMBuildDir}'
     # print(ExecuteCMD(build_function_model_cmd)[0])
     ExecuteBigCMD(build_function_model_cmd)
     assert os.path.exists(FunctionModelBinary), "Fails to build function modeling tool"
     
     ### kernel_analysis
     logging.info("Building tool for entry extract and distance calculation")
-    build_kernel_analysis_cmd=f"cd {TargetPointAnalysisDirRoot} && make clean && make LLVM_BUILD={LLVMBuildDir}"
+    build_kernel_analysis_cmd=f"cd {TargetPointAnalysisDirRoot} && make LLVM_BUILD={LLVMBuildDir}"
     ExecuteBigCMD(build_kernel_analysis_cmd)
     assert os.path.exists(TargetPointAnalysisBinary), "Fails to build tool for entry extract and distance calculation"
     
