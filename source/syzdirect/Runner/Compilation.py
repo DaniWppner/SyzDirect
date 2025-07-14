@@ -87,9 +87,9 @@ exec $CLANG "$@"
 
         
         
-        compile_command = f"cd {Config.getSrcDirByCase(caseIdx)} && git checkout -- scripts/Makefile.kcov && make clean && make mrproper && yes | make CC={Config.EmitScriptPath} O={caseBCDir} oldconfig && make CC=\'{Config.EmitScriptPath}\' O={caseBCDir} -j{Config.CPUNum}"
+        compile_command = f"cd {Config.getSrcDirByCase(caseIdx)} && git checkout -- scripts/Makefile.kcov && make clean && make mrproper && make CC={Config.EmitScriptPath} O={caseBCDir} olddefconfig && make CC=\'{Config.EmitScriptPath}\' O={caseBCDir} -j{Config.CPUNum}"
         # print(Config.ExecuteCMD(compile_command))
-        os.system(compile_command)
+        Config.ExecuteBigCMD(compile_command)
         if IsCompilationSuccessfulByCase(caseBCDir):
             Config.logging.info(f"[case {caseIdx}] Successfully compiled bitcode")
         else:
