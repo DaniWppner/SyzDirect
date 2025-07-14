@@ -20,6 +20,7 @@ build_analyzer_func = \
 		&& LLVM_TOOLS_BINARY_DIR=${LLVM_BUILD}/bin \
 			LLVM_LIBRARY_DIRS=${LLVM_BUILD}/lib \
 			LLVM_INCLUDE_DIRS=${LLVM_BUILD}/include \
+			LLVM_DIR=${LLVM_BUILD} \
 			CC=${CC} CXX=${CXX} \
 			cmake ${1}	\
 				-DCMAKE_BUILD_TYPE=Release \
