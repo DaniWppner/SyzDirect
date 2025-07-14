@@ -44,7 +44,7 @@ def LoadDatapoints():
             datapoint['recommend syscall']=[]
         else:
             datapoint['recommend syscall']=datapoint['recommend syscall'].split(',')
-        assert os.path.exists(datapoint['config path'])
+        assert os.path.exists(datapoint['config path']), f"kernel config for entry {datapoint['idx']} at {datapoint['config path']} does not exist."
     logging.debug(res)
     
 def ExecuteCMD(cmd):
