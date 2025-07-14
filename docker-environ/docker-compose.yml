@@ -1,0 +1,14 @@
+services:
+  syzdirect-environment:
+    build: .
+    container_name: syzdirect-environment
+    stdin_open: true 
+    tty: true
+    working_dir: /src
+    entrypoint: /usr/bin/bash
+    volumes:
+      - /path/to/linux:/src/linux:z
+      - /path/to/SyzDirect:/src/SyzDirect:z
+      - /path/to/kernel_image:/src/kernelimage:z
+    restart: "no"
+    
