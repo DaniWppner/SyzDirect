@@ -1,6 +1,4 @@
-# Steps to reach file->remap_file_range instruction through IOCTL$FIDEDUPRANGE in linux v6.15.6 with Syzdirect:
-
-## THIS DOESN'T WORK. KERNEL VERSION 6.15.6 REQUIRES CLANG VERSION OF AT LEAST 15.0.0 BUT SYZDIRECT DEPENDS ON CLANG VERSION 13.0.1. IF YOU FIX THIS, FEEL FREE TO ADD HOW TO THIS README 
+# Steps to reach file->remap_file_range instruction through IOCTL$FIDEDUPRANGE in linux v5.10 with Syzdirect:
 
 ### 1. Launch docker environment.
 Edit the paths on [the docker-compose file](../../docker-environ/docker-compose.yml) if you haven't yet. Then run:
@@ -17,12 +15,12 @@ docker exec -it syzdirect-environment bash
 To get into the container. The steps to follow assume you're working inside the docker terminal. 
 
 ### 2. Execute 'prepare for manual instrument' step of SyzDirect
-Inside the docker container, go to the [examples/vfs_dedupe_file_range_v6.5.15](../../examples/vfs_dedupe_file_range_v6.5.15/) directory.
+Inside the docker container, go to the [examples/vfs_dedupe_file_range_v5.10](../../examples/vfs_dedupe_file_range_v5.10/) directory.
 Then invoke the 'prepare for manual instrument' step of SyzDirect.
 
 ```bash
-cd /src/SyzDirect/examples/vfs_dedupe_file_range_v6.5.15
-python3 /src/SyzDirect/source/syzdirect/Runner/Main.py -dataset ./dedupe_file_range_v6.15.6_dataset.xlsx  -linux-repo-template /src/linux -j 8 -custom-kcov-patch ./kcov_v6.15.6.patch  prepare_for_manual_instrument
+cd /src/SyzDirect/examples/vfs_dedupe_file_range_v5.10
+python3 /src/SyzDirect/source/syzdirect/Runner/Main.py -dataset ./dedupe_file_range_v5.10_dataset.xlsx  -linux-repo-template /src/linux -j 8 -custom-kcov-patch ./kcov_v5.10.patch  prepare_for_manual_instrument
 ```
 This will probably clone the linux repo on top of building both Syzkaller and LLVM. **It might take a long while.**
 
@@ -62,10 +60,9 @@ to introduce a `BUG()` that will signal we reached the instruction of interest, 
 
 ### 4. Execute 'prepare kernel bitcode' step of SyzDirect
 
-This step will fail because the Clang (LLVM) fork of Syzdirect is based on version 13.0.1, but kernel version 6.5.15 requires Clang version at least 15.0.0.
 
 ```bash
-python3 /src/SyzDirect/source/syzdirect/Runner/Main.py -dataset ./dedupe_file_range_v6.15.6_dataset.xlsx -j 8 prepare_kernel_bitcode
+python3 /src/SyzDirect/source/syzdirect/Runner/Main.py -dataset ./dedupe_file_range_v5.10_dataset.xlsx -j 8 prepare_kernel_bitcode
 ```
 
 ### 5. Execute 'analyze kernel syscall' step of Syzdirect
