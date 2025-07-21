@@ -946,7 +946,7 @@ int main(int argc, char **argv) {
           for (auto a:ArgumentsConstMap){
             for(auto b:a.second){
               if(b->switchBlock)
-                b->switchBlock->printAsOperand(OP());
+                b->switchBlock->printAsOperand(OP);
               OP << "\n";
             }
           }
