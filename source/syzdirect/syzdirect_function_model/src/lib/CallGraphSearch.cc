@@ -8,9 +8,9 @@ unordered_map<Function*, bool> visited;
 
 bool SubgraphBuildImpl(CallerMap CallInsts, CalleeMap Callees, SubgraphNode* current, unordered_map<Function*, bool> terminators, int maxDepth) {
     for (int i = 0; i < (6 - maxDepth); i++) {
-        outs() << " ";
+        OP << " ";
     }
-    outs() << current->function->getName() << "\n";
+    OP << current->function->getName() << "\n";
     if (visited.count(current->function)) {
         return visited[current->function];
     }

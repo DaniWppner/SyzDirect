@@ -132,9 +132,9 @@ void FopsFinderPass::InsertIndirectCall(CallInst* callInst, SmallPtrSet<Function
     if (calledFunc == nullptr) { // indirect call
         for (auto calleeFunc: calleeFuncSet) {
             if (SyscallHandlerCandidates.find(calleeFunc) == SyscallHandlerCandidates.end() && DetermineHandlerFunctionHeuristic(calleeFunc, syscallType)) {
-                outs()  << syscallType << " handler candidate: " << calleeFunc->getName() << "\n";
+                OP  << syscallType << " handler candidate: " << calleeFunc->getName() << "\n";
                 for (int i = 0; i < Ctx->FunctionSyscallArgMap[calleeFunc].size(); i++) {
-                    outs() << "arg " << i << ": " << Ctx->FunctionSyscallArgMap[calleeFunc][i] << "\n";
+                    OP << "arg " << i << ": " << Ctx->FunctionSyscallArgMap[calleeFunc][i] << "\n";
                 }
                 SyscallHandlerCandidates.insert(calleeFunc);
                 SyscallHandlerTypeMap[calleeFunc] = syscallType;

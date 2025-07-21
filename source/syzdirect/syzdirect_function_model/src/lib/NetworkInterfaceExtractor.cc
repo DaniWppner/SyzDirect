@@ -422,7 +422,7 @@ void generateNetworkSyscallsArgMapProto(Function* handlerFunc, string syscall)
 
 void NetworkInterfaceExtractorPass::getProtoOpsFromCreateFunction(Function* F, ConstantStruct** protoOps, set<Function*>&visited, int depth)
 {
-    outs() << "in function: " << F->getName() << "\n";
+    OP << "in function: " << F->getName() << "\n";
     if(depth > 1)
     {
         return;
@@ -537,7 +537,7 @@ Function* NetworkInterfaceExtractorPass::getSendmsgHandler(Value* cfgOp)
                             {
                                 targetFunc = getFunctionFromModules(targetFunc->getName());
                             }
-                            outs() << "target function: " << targetFunc->getName() << "\n";
+                            OP << "target function: " << targetFunc->getName() << "\n";
                             for(inst_iterator iter = inst_begin(targetFunc); iter != inst_end(targetFunc); iter++)
                             {
                                 Instruction* I = &*iter;
@@ -546,7 +546,7 @@ Function* NetworkInterfaceExtractorPass::getSendmsgHandler(Value* cfgOp)
                                     if(callInst->isIndirectCall() || callInst->isInlineAsm())
                                         continue;
     
-                                    outs() << callInst->getCalledFunction()->getName() << "\n";
+                                    OP << callInst->getCalledFunction()->getName() << "\n";
                                     if(callInst->getCalledFunction()->getName() == "netlink_rcv_skb")
                                     {
                                         targetFunc = dyn_cast<Function>(callInst->getArgOperand(1));
@@ -594,17 +594,17 @@ vector<tuple<unsigned, unsigned, Function*, Function*>> NetworkInterfaceExtracto
                                Function* dumpitFunc = dyn_cast<Function>(op4);
                                if(op3->getValueID() != Value::ConstantPointerNullVal && !doitFunc)
                                {
-                                   outs() << "not found doit func in function: " << callInst->getFunction()->getName() << "\n";
+                                   OP << "not found doit func in function: " << callInst->getFunction()->getName() << "\n";
                                }
                                if(op4->getValueID() != Value::ConstantPointerNullVal && !dumpitFunc)
                                {
-                                   outs() << "not found dumpit func in function: " << callInst->getFunction()->getName() << "\n";
+                                   OP << "not found dumpit func in function: " << callInst->getFunction()->getName() << "\n";
                                }
                                res.push_back(tuple<unsigned, unsigned, Function*, Function*>(constantInt1->getZExtValue(), constantInt2->getZExtValue(), doitFunc, dumpitFunc));
                            }
                            else
                            {
-                               outs() << "not constant value in function: " << callInst->getFunction()->getName() << "\n";
+                               OP << "not constant value in function: " << callInst->getFunction()->getName() << "\n";
                            }
                         }
                     }
@@ -624,7 +624,7 @@ vector<tuple<unsigned, Function*, Function*>> NetworkInterfaceExtractorPass::get
     {
         ops = gepOp->getOperand(0);
     }
-    outs() << "genl family ops: " << *ops << "\n";
+    OP << "genl family ops: " << *ops << "\n";
     GlobalVariable* opsVar = dyn_cast<GlobalVariable>(ops);
     if(opsVar == nullptr)
     {
@@ -660,7 +660,7 @@ vector<tuple<unsigned, Function*, Function*>> NetworkInterfaceExtractorPass::get
     {
         smallOps = gepOp->getOperand(0);
     }
-    outs() << "genl family small ops: " << *smallOps << "\n";
+    OP << "genl family small ops: " << *smallOps << "\n";
     GlobalVariable* smallOpsVar = dyn_cast<GlobalVariable>(smallOps);
     if(smallOpsVar == nullptr)
     {
@@ -779,7 +779,7 @@ vector<GenlFamilyInfo*> NetworkInterfaceExtractorPass::getGenlInfos()
 // handle xfrm
 vector<tuple<unsigned, Function*, Function*>> NetworkInterfaceExtractorPass::getXfrmHandlers()
 {
-    outs() << "processing xfrm\n";
+    OP << "processing xfrm\n";
     vector<tuple<unsigned, Function*, Function*>> res;
     Value* xfrmDispatch = Ctx->GlobalStructMap["xfrm_dispatch"];
     if(xfrmDispatch == nullptr)
@@ -794,7 +794,7 @@ vector<tuple<unsigned, Function*, Function*>> NetworkInterfaceExtractorPass::get
                     if (g == nullptr) {
                         continue;
                     }
-                    outs() << "global name: " << g->getName() << "\n";
+                    OP << "global name: " << g->getName() << "\n";
                     if (g->getName() == "xfrm_dispatch")
                     {
                         xfrmDispatch = g;
@@ -806,11 +806,11 @@ vector<tuple<unsigned, Function*, Function*>> NetworkInterfaceExtractorPass::get
     GlobalVariable* globalVar = dyn_cast<GlobalVariable>(xfrmDispatch);
     if(globalVar == nullptr)
         return res;
-    outs() << "get target global struct" << "\n";
+    OP << "get target global struct" << "\n";
     ConstantArray* xfrmDispathArray = dyn_cast<ConstantArray>(globalVar->getInitializer());
     if(xfrmDispathArray == nullptr)
         return res;
-    outs() << "aaa\n";
+    OP << "aaa\n";
     for(int i = 0; i < xfrmDispathArray->getNumOperands(); i++)
     {
         int type = i + XFRM_MSG_BASE;
@@ -822,7 +822,7 @@ vector<tuple<unsigned, Function*, Function*>> NetworkInterfaceExtractorPass::get
         res.push_back(tuple<unsigned, Function*, Function*>(type, doitFunc, dumpitFunc));
 
     }
-    outs() << "bbb\n";
+    OP << "bbb\n";
     return res;
 }
 
@@ -987,7 +987,7 @@ vector<NfSubsysInfo*> NetworkInterfaceExtractorPass::getNfInfos()
 
 void NetworkInterfaceExtractorPass::ProcessNetlinkKernelCreate(NetworkInterfaceInfoItem* infoItem, CallInst* callInst)
 {
-    outs() << "in process netlink kernel create\n";
+    OP << "in process netlink kernel create\n";
     NetlinkInfoItem* netlinkInfoItem = new NetlinkInfoItem(infoItem);
     Value* op = callInst->getArgOperand(1);
     if(ConstantInt* constantInt = dyn_cast<ConstantInt>(op))
@@ -996,7 +996,7 @@ void NetworkInterfaceExtractorPass::ProcessNetlinkKernelCreate(NetworkInterfaceI
         netlinkInfoItem->protocol = protocol;
     }
     Value* cfgOp = callInst->getArgOperand(3);
-    outs() << "call netlink_kernel_create in function: " << callInst->getFunction()->getName() << "\n";
+    OP << "call netlink_kernel_create in function: " << callInst->getFunction()->getName() << "\n";
     Function* targetFunc = getSendmsgHandler(cfgOp);
     netlinkInfoItem->SendmsgHandler = targetFunc;
     if(netlinkInfoItem->protocol == NETLINK_ROUTE)
@@ -1039,7 +1039,7 @@ void NetworkInterfaceExtractorPass::ProcessNetlinkKernelCreate(NetworkInterfaceI
 
 void NetworkInterfaceExtractorPass::ProcessNetlink(NetworkInterfaceInfoItem* infoItem)
 {
-    outs() << "in process netlink\n";
+    OP << "in process netlink\n";
     for(auto item:Ctx->Modules)
     {
         Module* M = item.first;
@@ -1069,7 +1069,7 @@ void NetworkInterfaceExtractorPass::ProcessInetProtosw(ConstantStruct* protosw) 
     auto typeVal = getIntValue(type);
     auto protocol = constantStruct->getOperand(Ctx->StructFieldIdx["inet_protosw"]["protocol"]);
     auto protocolVal = getIntValue(protocol);
-    outs() << "type: " << typeVal << ", protocol: " << protocolVal << "\n";
+    OP << "type: " << typeVal << ", protocol: " << protocolVal << "\n";
     auto proto = constantStruct->getOperand(Ctx->StructFieldIdx["inet_protosw"]["prot"]);
     auto protoVal = getStructValue(proto);
     if (!protoVal && Ctx->GlobalStructMap.count(proto->getName().str())) {
@@ -1077,19 +1077,19 @@ void NetworkInterfaceExtractorPass::ProcessInetProtosw(ConstantStruct* protosw) 
     }   
     
     if (protoVal) {
-        outs() << "protoVal: " << *protoVal << "\n";
+        OP << "protoVal: " << *protoVal << "\n";
         auto protoStruct = dyn_cast<ConstantStruct>(protoVal);
         auto name = protoStruct->getOperand(Ctx->StructFieldIdx["proto"]["name"]);
         auto nameStr = getDeviceString(name);
-        outs() << "name: " << nameStr << "\n";
+        OP << "name: " << nameStr << "\n";
         auto ops = constantStruct->getOperand(Ctx->StructFieldIdx["inet_protosw"]["ops"]);
-        outs() << "ops:" << *ops << "\n";
+        OP << "ops:" << *ops << "\n";
         auto opsVal = getStructValue(ops);
         if (!opsVal && Ctx->GlobalStructMap.count(ops->getName().str())) {
             opsVal = getStructValue(Ctx->GlobalStructMap[ops->getName().str()]);
         }
         if (opsVal) {
-            outs() << "opsVal: " << *opsVal << "\n";
+            OP << "opsVal: " << *opsVal << "\n";
             auto opsStruct = dyn_cast<ConstantStruct>(opsVal);
             NetworkInterfaceInfoItem* infoItem = nullptr;
             for (auto item: Ctx->SubsystemInfo) {
@@ -1127,10 +1127,10 @@ void NetworkInterfaceExtractorPass::ProcessInetProtosw(ConstantStruct* protosw) 
 
 
 void NetworkInterfaceExtractorPass::ProcessInetRegisterProtosw(CallInst* callInst) {
-    outs() << "[*] new inet call: " << *callInst << "\n";
+    OP << "[*] new inet call: " << *callInst << "\n";
     // struct inet_protosw *
     auto protoswPtr = callInst->getArgOperand(0);
-    outs() << "protoswPtr: " << *protoswPtr << "\n";
+    OP << "protoswPtr: " << *protoswPtr << "\n";
     if (auto protoswGV = dyn_cast<GlobalVariable>(protoswPtr)) {
         if (protoswGV->hasInitializer()) {
             auto initializer = protoswGV->getInitializer();
@@ -1158,7 +1158,7 @@ set<Value*>* NetworkInterfaceExtractorPass::GetAliasOfStructType(Value* value, s
             auto ElemType = aliasPtr->getElementType();
             if (ElemType) {
                 if (auto aliasStruct = dyn_cast<StructType>(ElemType)) {
-                    outs() << "Alias: " << *A << " " << aliasStruct->getName() << "\n";
+                    OP << "Alias: " << *A << " " << aliasStruct->getName() << "\n";
                     if (aliasStruct->getName() == structName) {
                         resSet->insert(A);
                     }
@@ -1172,7 +1172,7 @@ set<Value*>* NetworkInterfaceExtractorPass::GetAliasOfStructType(Value* value, s
 
 Value* NetworkInterfaceExtractorPass::ExtractPtrAssignment(Value* ptrValue) {
     for (auto user: ptrValue->users()) {
-        outs() << "\t User: " << *user << "\n";
+        OP << "\t User: " << *user << "\n";
         if (auto storeInst = dyn_cast<StoreInst>(user)) {
             return storeInst->getValueOperand();
         } else if (auto callInst = dyn_cast<CallInst>(user)) {
@@ -1186,7 +1186,7 @@ Value* NetworkInterfaceExtractorPass::ExtractPtrAssignment(Value* ptrValue) {
 }
 
 void NetworkInterfaceExtractorPass::ProcessProtoRegister(CallInst* callInst) {
-    outs() << "[*] new proto call: " << *callInst << "\n";
+    OP << "[*] new proto call: " << *callInst << "\n";
 
     // find corresponding sock register in the same function
     auto func = callInst->getFunction();
@@ -1198,11 +1198,11 @@ void NetworkInterfaceExtractorPass::ProcessProtoRegister(CallInst* callInst) {
             if (auto candidateCall =  dyn_cast<CallInst>(&I)) {
                 if (candidateCall->getCalledFunction() && candidateCall->getCalledFunction()->getName() == "sock_register") {
                     socketRegisterCall = candidateCall;
-                    outs() << "sock_register: " << *candidateCall << "\n";
+                    OP << "sock_register: " << *candidateCall << "\n";
                     found = true;
             } else if (candidateCall->getCalledFunction() && candidateCall->getCalledFunction()->getName() == "bt_sock_register") {
                     socketRegisterCall = candidateCall;
-                    outs() << "bt_sock_register: " << *candidateCall << "\n";
+                    OP << "bt_sock_register: " << *candidateCall << "\n";
                     found = true;
                     isBt = true;
                 }
@@ -1210,7 +1210,7 @@ void NetworkInterfaceExtractorPass::ProcessProtoRegister(CallInst* callInst) {
      }
     }
     if (!found) {
-        outs() << "sock_register not found\n";
+        OP << "sock_register not found\n";
         // try to find sock register in the context
         return;
     } 
@@ -1231,10 +1231,10 @@ void NetworkInterfaceExtractorPass::ProcessProtoRegister(CallInst* callInst) {
         }
     }
     if (protoStruct) {
-        outs() << "protoStruct: " << *protoStruct << "\n";
+        OP << "protoStruct: " << *protoStruct << "\n";
     } 
     if (familyStruct) {
-        outs() << "familyStruct: " << *familyStruct << "\n";
+        OP << "familyStruct: " << *familyStruct << "\n";
     } 
     if (!protoStruct || !familyStruct) {
         return;
@@ -1245,7 +1245,7 @@ void NetworkInterfaceExtractorPass::ProcessProtoRegister(CallInst* callInst) {
     auto protoConstantStruct = dyn_cast<ConstantStruct>(protoStruct);
     auto name = protoConstantStruct->getOperand(Ctx->StructFieldIdx["proto"]["name"]);
     auto nameStr = getDeviceString(name);
-    outs() << "name: " << nameStr << "\n";
+    OP << "name: " << nameStr << "\n";
 
     for (auto syscall: networkSyscalls) {
         auto handler = protoConstantStruct->getOperand(Ctx->StructFieldIdx["proto"][syscall]);
@@ -1259,11 +1259,11 @@ void NetworkInterfaceExtractorPass::ProcessProtoRegister(CallInst* callInst) {
     auto familyConstantStruct = dyn_cast<ConstantStruct>(familyStruct);
     auto family = familyConstantStruct->getOperand(0);
     auto familyVal = getIntValue(family);
-    outs() << "family: " << familyVal << "\n";
+    OP << "family: " << familyVal << "\n";
     auto create = familyConstantStruct->getOperand(1);
     if (auto createFunction = dyn_cast<Function>(create)) {
         // process .create function
-        outs() << "createFunction: " << createFunction->getName() << "\n";
+        OP << "createFunction: " << createFunction->getName() << "\n";
         infoItem->CreateFunction = createFunction;
 
         auto sockArg = createFunction->getArg(1);
@@ -1274,10 +1274,10 @@ void NetworkInterfaceExtractorPass::ProcessProtoRegister(CallInst* callInst) {
         set<Value*> opsStructCandidate;
     
         for (auto sockAlias: *sockAliasSet) {
-            outs() << "sock alias: " << *sockAlias << "\n";
+            OP << "sock alias: " << *sockAlias << "\n";
             for (auto user : sockAlias->users()) { 
                 if (auto gepInst = dyn_cast<GetElementPtrInst>(user)) {
-                    outs() << "\tGEP: " << *gepInst << "\n";
+                    OP << "\tGEP: " << *gepInst << "\n";
                     auto offsetVal = gepInst->getOperand(2);
                     auto offsetInt = dyn_cast<ConstantInt>(offsetVal);
                     // get access of the fops field
@@ -1334,7 +1334,7 @@ void NetworkInterfaceExtractorPass::ProcessProtoRegister(CallInst* callInst) {
 
                     // FIXME: ad-hoc solution for socket type
                     auto structName = opsVal->getName().str();
-                    outs() << "struct name:" << structName << "\n";
+                    OP << "struct name:" << structName << "\n";
                     if (ProtoOpsTypeMap.count(structName)) {
                         newInfoItem->type = ProtoOpsTypeMap[structName];
                         newInfoItem->protocol = ProtoOpsProtocolMap[structName];
@@ -1361,7 +1361,7 @@ void NetworkInterfaceExtractorPass::ProcessProtoRegister(CallInst* callInst) {
 
     }
 
-    outs() << "DEBUG!!!" << "\n";
+    OP << "DEBUG!!!" << "\n";
     if(infoItem->family == AF_NETLINK)
     {
         set<Function*> visited = set<Function*>();
@@ -1369,16 +1369,16 @@ void NetworkInterfaceExtractorPass::ProcessProtoRegister(CallInst* callInst) {
         getProtoOpsFromCreateFunction(infoItem->CreateFunction, &protoOps, visited, 0);
         if(protoOps)
         {
-            outs() << "proto_ops: " << *protoOps << "\n";
+            OP << "proto_ops: " << *protoOps << "\n";
             for (auto syscall: networkSyscalls) {
-                outs() << "syscall: " << syscall << "\n";
-                outs() << "op idx: " << Ctx->StructFieldIdx["proto_ops"][syscall] << "\n";
+                OP << "syscall: " << syscall << "\n";
+                OP << "op idx: " << Ctx->StructFieldIdx["proto_ops"][syscall] << "\n";
                 for(auto item:Ctx->StructFieldIdx["proto_ops"])
                 {
-                    outs() << "name: " << item.first << " idx: " << item.second << "\n";
+                    OP << "name: " << item.first << " idx: " << item.second << "\n";
                 }
                 auto handler = protoOps->getOperand(Ctx->StructFieldIdx["proto_ops"][syscall]);
-                outs() << "handler: " << *handler << "\n";
+                OP << "handler: " << *handler << "\n";
                 if (auto handlerFunc = dyn_cast<Function>(handler)) {
                     infoItem->SyscallHandler[syscall] = handlerFunc;
                     generateNetworkSyscallsArgMapProtoOps(handlerFunc, syscall);
@@ -1388,7 +1388,7 @@ void NetworkInterfaceExtractorPass::ProcessProtoRegister(CallInst* callInst) {
             for (auto handler : infoItem->SyscallHandler) {
                 auto syscallName = handler.first;
                 auto handlerName = handler.second->getName();
-                outs() << "|---|--- " << syscallName << ": " << handlerName << "\n";
+                OP << "|---|--- " << syscallName << ": " << handlerName << "\n";
             }
         }
         infoItem->type = 2;

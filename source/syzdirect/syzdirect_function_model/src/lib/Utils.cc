@@ -37,23 +37,23 @@ int getIntValue(Value* value) {
     if (constVal) {
         return constVal->getZExtValue();
     } else {
-        outs() << "[-] Non-constant int: " << *value << "\n";
+        OP << "[-] Non-constant int: " << *value << "\n";
         if (auto loadInst = dyn_cast<LoadInst>(value)) {
             auto addr = loadInst->getPointerOperand();
-            outs() << "\t[-] Address: " << *addr << "\n";
+            OP << "\t[-] Address: " << *addr << "\n";
             return getIntValue(addr);
         } else if (auto binaryInst = dyn_cast<BinaryOperator>(value)) {
             auto op1 = binaryInst->getOperand(0);
             auto op2 = binaryInst->getOperand(1);
-            outs() << "\t[-] Op1: " << *op1 << "\n";
-            outs() << "\t[-] Op2: " << *op2 << "\n";
+            OP << "\t[-] Op1: " << *op1 << "\n";
+            OP << "\t[-] Op2: " << *op2 << "\n";
 
         } else if (auto gv = dyn_cast<GlobalVariable>(value)) {
             auto initializer = gv->getInitializer();
             if (initializer) {
                 return getIntValue(initializer);
             } else {
-                outs() << "\t[-] No initializer for global variable: " << *value << "\n";   
+                OP << "\t[-] No initializer for global variable: " << *value << "\n";   
             }
         }
         return -1;
@@ -96,31 +96,31 @@ Value* getStructValue(Value* value) {
             auto handlerStruct = dyn_cast<ConstantStruct>(initializer);
             if (handlerStruct) {
                 return dyn_cast<Value>(handlerStruct);
-                outs() << "[+] Struct value: " << *handlerStruct << "\n";
+                OP << "[+] Struct value: " << *handlerStruct << "\n";
             } else {
-                outs() << "[-] Non-constant struct value: " << *(initializer) << "\n";
-                outs() << "\t[-] Users: \n";
+                OP << "[-] Non-constant struct value: " << *(initializer) << "\n";
+                OP << "\t[-] Users: \n";
                 for (auto user : handlerStructGV->users()) {
-                    outs() << "\t\t" << *user << "\n";
+                    OP << "\t\t" << *user << "\n";
                 } 
             }
         } else {
-            outs() << "[-] No initializer for struct: " << *value << "\n";
+            OP << "[-] No initializer for struct: " << *value << "\n";
         }
     } else if (auto bitcastOp = dyn_cast<BitCastOperator>(value)) {
-        outs() << "[-] BitCastOp: " << *bitcastOp << "\n";
+        OP << "[-] BitCastOp: " << *bitcastOp << "\n";
         auto castVal = bitcastOp->getOperand(0);
-        outs() << "\t[-] CastVal: " << *castVal << "\n";
+        OP << "\t[-] CastVal: " << *castVal << "\n";
         return getStructValue(castVal);
     } else {
-        outs() << "[-] Local struct: " << *value << "\n";
+        OP << "[-] Local struct: " << *value << "\n";
         if (isa<PHINode>(value)) {
             auto phiVal = dyn_cast<PHINode>(value);
             // TODO: phi node 
             return getStructValue(phiVal->getIncomingValue(0));
         }
         if (isa<Argument>(value)) {
-            outs() << "\t[-] Argument: " << *value << "\n";
+            OP << "\t[-] Argument: " << *value << "\n";
         }
     }
     return nullptr;

@@ -96,7 +96,7 @@ void FilesystemExtractorPass::getFileOperationsFromFillSuper(Function* F, Filesy
     visited.insert(F);
     if(F->getName() == "inode_init_always")
         return;
-    outs() << "getFileOperationsFromFillSuper: " << F->getName() << "\n";
+    OP << "getFileOperationsFromFillSuper: " << F->getName() << "\n";
     for(inst_iterator iter = inst_begin(F); iter != inst_end(F); iter++)
     {
         Instruction* I = &*iter;
@@ -357,12 +357,12 @@ std::map<std::string, uint> PassGetTreeWrapper = {
 void FilesystemExtractorPass::HandleFsTypeStruct(GlobalVariable* globalVar, FilesystemInfoItem* filesystemInfoItem)
 {
     ConstantStruct* constStruct = dyn_cast<ConstantStruct>(globalVar->getInitializer());
-    outs() << "[+] global variable defination: " << *globalVar << "\n";
-    outs() << "[+] type: " << globalVar->getValueType()->getStructName() << "\n";
+    OP << "[+] global variable defination: " << *globalVar << "\n";
+    OP << "[+] type: " << globalVar->getValueType()->getStructName() << "\n";
     // constStruct->ge
     Constant* filesystemNameVal = constStruct->getOperand(Ctx->StructFieldIdx["file_system_type"]["name"]);
     string filesystemName = getFilesystemNameString(filesystemNameVal);
-    outs() << "str: " << filesystemName << "\n";
+    OP << "str: " << filesystemName << "\n";
     filesystemInfoItem->name = filesystemName;
     filesystemInfoItem->filesystemTypeStruct = globalVar;
     Constant* mountFuncPtr = constStruct->getOperand(Ctx->StructFieldIdx["file_system_type"]["mount"]);
@@ -386,19 +386,19 @@ void FilesystemExtractorPass::HandleFsTypeStruct(GlobalVariable* globalVar, File
                     if(callInst->getCalledFunction() != nullptr && callInst->getCalledFunction()->getName() == "mount_bdev")
                     {
                         fillSuperFunc = dyn_cast<Function>(callInst->getArgOperand(4));
-                        outs() << "fill super func: " << fillSuperFunc->getName() << "\n";
+                        OP << "fill super func: " << fillSuperFunc->getName() << "\n";
                         break;
                     }
                     else if(callInst->getCalledFunction() != nullptr && callInst->getCalledFunction()->getName() == "mount_nodev")
                     {
                         fillSuperFunc = dyn_cast<Function>(callInst->getArgOperand(3));
-                        outs() << "fill super func: " << fillSuperFunc->getName() << "\n";
+                        OP << "fill super func: " << fillSuperFunc->getName() << "\n";
                         break;
                     }
                     else if(callInst->getCalledFunction() != nullptr && callInst->getCalledFunction()->getName() == "mount_single")
                     {
                         fillSuperFunc = dyn_cast<Function>(callInst->getArgOperand(3));
-                        outs() << "fill super func: " << fillSuperFunc->getName() << "\n";
+                        OP << "fill super func: " << fillSuperFunc->getName() << "\n";
                         break;
                     }
                 }
@@ -448,7 +448,7 @@ void FilesystemExtractorPass::HandleFsTypeStruct(GlobalVariable* globalVar, File
                 auto res = PassGetTreeWrapper.find(calledFunc->getName().str());
                 if (res != PassGetTreeWrapper.end()) {
                     fillSuperFunc = dyn_cast<Function>(callInst->getArgOperand((*res).second));
-                    outs() << "fill super func (from initFsCtx): " << fillSuperFunc->getName() << "\n"; 
+                    OP << "fill super func (from initFsCtx): " << fillSuperFunc->getName() << "\n"; 
                     if (fillSuperFunc->getInstructionCount() == 0) {
                         fillSuperFunc = getFunctionFromModules(fillSuperFunc->getName());
                     }
@@ -569,7 +569,7 @@ vector<pair<string, Function*>> FilesystemExtractorPass::getHandlerFromFileOpera
             res.push_back(make_pair("ioctl", ioctlFunc));
             if(ioctlFunc->getName() == "autofs_root_ioctl")
             {
-                outs() << "get autofs_root_ioctl" << "\n";
+                OP << "get autofs_root_ioctl" << "\n";
             }
             GlobalCtx.FunctionArgMap[ioctlFunc->getName().str()] = {1, 2, 4};
         }
@@ -649,8 +649,8 @@ void FilesystemExtractorPass::ProcessRegisterFilesystem(CallInst* callInst)
     Value* arg = callInst->getOperand(0);
     if(GlobalVariable* globalVar = dyn_cast<GlobalVariable>(arg))
     {
-        outs() << "[*] global variable: " << *arg << "\n";
-        outs() << "[*] type: " << *globalVar->getType() << "\n";
+        OP << "[*] global variable: " << *arg << "\n";
+        OP << "[*] type: " << *globalVar->getType() << "\n";
         if(globalVar->getValueType()->isStructTy())
         {
             if(globalVar->hasInitializer())
@@ -659,11 +659,11 @@ void FilesystemExtractorPass::ProcessRegisterFilesystem(CallInst* callInst)
             }
             else
             {
-                outs() << "[-] global variable declaration: " << *arg << "\n";
+                OP << "[-] global variable declaration: " << *arg << "\n";
                 GlobalVariable* globalVar = getGlobalVaraible(arg->getName());
                 if(globalVar != nullptr)
                 {
-                    outs() << "[+] get global variable: " << *globalVar << "\n";
+                    OP << "[+] get global variable: " << *globalVar << "\n";
                     HandleFsTypeStruct(globalVar, filesystemInfoItem);
                 }
             }
@@ -672,7 +672,7 @@ void FilesystemExtractorPass::ProcessRegisterFilesystem(CallInst* callInst)
     }
     else if(ConstantExpr* constantExpr = dyn_cast<ConstantExpr>(arg))
     {
-        outs() << "[+] constant cast: " << *arg << "\n";
+        OP << "[+] constant cast: " << *arg << "\n";
         if(constantExpr->isCast())
         {
             if(GlobalVariable* globalVar = dyn_cast<GlobalVariable>(constantExpr->getOperand(0)))
@@ -683,11 +683,11 @@ void FilesystemExtractorPass::ProcessRegisterFilesystem(CallInst* callInst)
                 }
                 else
                 {
-                    outs() << "[-] global variable declaration: " << *arg << "\n";
+                    OP << "[-] global variable declaration: " << *arg << "\n";
                     globalVar = getGlobalVaraible(arg->getName());
                     if(globalVar != nullptr)
                     {
-                        outs() << "[+] get global variable: " << *globalVar << "\n";
+                        OP << "[+] get global variable: " << *globalVar << "\n";
                         HandleFsTypeStruct(globalVar, filesystemInfoItem);
                     }
                 }
@@ -697,9 +697,9 @@ void FilesystemExtractorPass::ProcessRegisterFilesystem(CallInst* callInst)
     }
     else
     {
-        outs() << "[-] local variable: " << *arg << "\n";
-        outs() << "[-] variable name: " << arg->getName() << "\n";
-        outs() << "[-] in function: " << callInst->getFunction()->getName() << "\n";
+        OP << "[-] local variable: " << *arg << "\n";
+        OP << "[-] variable name: " << arg->getName() << "\n";
+        OP << "[-] in function: " << callInst->getFunction()->getName() << "\n";
     }
 
     SpecialFSItem* SpecialFileSystemInfoItem=NULL;
@@ -837,8 +837,8 @@ bool FilesystemExtractorPass::doModulePass(Module* M)
                     vector<Module*> relatedModule = getRelatedModule(M);
                     for(Module* m: relatedModule)
                     {
-                        outs() << "related modules\n";
-                        outs() << m->getSourceFileName() << "\n";
+                        OP << "related modules\n";
+                        OP << m->getSourceFileName() << "\n";
                     }
                     FilesystemInfoItem* filesystemInfoItem = static_cast<FilesystemInfoItem*>(Ctx->SubsystemInfo[Ctx->SubsystemInfo.size() - 1]);
                     vector<GlobalVariable*> shouldRemove;
@@ -849,7 +849,7 @@ bool FilesystemExtractorPass::doModulePass(Module* M)
                         {
                             if(m->getGlobalVariable(gv->getName()) != nullptr)
                             {
-                                outs() << "global variable name: " << gv->getName() << "\n";
+                                OP << "global variable name: " << gv->getName() << "\n";
                                 if(m->getGlobalVariable(gv->getName()) == gv)
                                 {
                                     flag = true;
@@ -872,8 +872,8 @@ bool FilesystemExtractorPass::doModulePass(Module* M)
                             vector<GlobalVariable*> fileOperations = getOperStruct(m, "file_operations");
                             for(GlobalVariable* gv : fileOperations)
                             {
-                                outs() << "file operations name: " << gv->getName() << "\n";
-                                outs() << "file operations type: " << gv->getValueType()->getStructName() << "\n";
+                                OP << "file operations name: " << gv->getName() << "\n";
+                                OP << "file operations type: " << gv->getValueType()->getStructName() << "\n";
                                 if(find(filesystemInfoItem->fileOperations.begin(), filesystemInfoItem->fileOperations.end(), gv) != filesystemInfoItem->fileOperations.end())
                                     continue;
                                 filesystemInfoItem->fileOperations.push_back(gv);
@@ -935,7 +935,7 @@ bool FilesystemExtractorPass::doModulePass(Module* M)
         vector<pair<string, Function*>> res = vector<pair<string, Function*>>();
         ConstantStruct* constStruct = dyn_cast<ConstantStruct>(handler->getInitializer());
         if (!constStruct) {
-            outs() << "what???? should have " << handler->getName().str() << " in module: " << M->getName() << '\n' ;
+            OP << "what???? should have " << handler->getName().str() << " in module: " << M->getName() << '\n' ;
             continue;
         }
         Constant* handlerGet = constStruct->getOperand(xattrHandlerStruc["get"]);
@@ -948,7 +948,7 @@ bool FilesystemExtractorPass::doModulePass(Module* M)
             }
             Constant* strConst = constStruct->getOperand(xattrHandlerStruc[fieldName]);
             if (!strConst) {
-                outs() << "no field: " << fieldName << '\n';
+                OP << "no field: " << fieldName << '\n';
                 continue;
             }
             string strVal = "";

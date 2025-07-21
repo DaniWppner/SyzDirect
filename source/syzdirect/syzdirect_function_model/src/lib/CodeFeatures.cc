@@ -261,17 +261,17 @@ void handleDrmIoctl(map<string, Module*> &ModuleMap, raw_fd_ostream& signatureFi
         auto M = item.second;
         auto gv = M->getGlobalVariable("drm_ioctls", true);
         if (!gv) {
-            outs() << "drm_ioctls not in module\n";
+            OP << "drm_ioctls not in module\n";
             break;
         } 
         map<unsigned, Function*> res;
         if (!gv->hasInitializer()) {
-            outs() <<"drm_ioctls not has initializer\n";
+            OP <<"drm_ioctls not has initializer\n";
             break;
         }
         ConstantStruct* drm_ioctls_struct = dyn_cast<ConstantStruct>(gv->getInitializer());
         if (drm_ioctls_struct == nullptr) {
-            outs() << "drm_ioctls not struct\n";
+            OP << "drm_ioctls not struct\n";
             break;
         }
         for(int i = 0; i < drm_ioctls_struct->getNumOperands(); i++) {
@@ -281,13 +281,13 @@ void handleDrmIoctl(map<string, Module*> &ModuleMap, raw_fd_ostream& signatureFi
                 if (func_arg && isa<Function>(func_arg)) {
                 auto constantInt = dyn_cast<ConstantInt>(constantStruct->getOperand(0));
                 if (constantInt == nullptr) {
-                    outs() << "constant cmd is null!!\n";
+                    OP << "constant cmd is null!!\n";
                 } else {
                     uint32_t cmd = uint32_t(constantInt->getZExtValue() & 0xFFFFFFFF); 
                     res[cmd] = dyn_cast<Function>(func_arg);
                 }
                 } else {
-                    outs() << "no function arg\n";
+                    OP << "no function arg\n";
                 }
             }
         }
@@ -410,12 +410,12 @@ void output_paths(std::vector<std::vector<BasicBlock*>>& paths)
     int num = 0;
     for(std::vector<BasicBlock*> path: paths)
     {
-        outs() << "path" << num << "\n";
+        OP << "path" << num << "\n";
         num ++;
         for(BasicBlock* BB : path)
         {
-            outs() << "block:" << BB->getName() << "\n";
-            outs() << *BB << "\n";
+            OP << "block:" << BB->getName() << "\n";
+            OP << *BB << "\n";
         }
         BasicBlock* endBB = path[path.size() - 1];
         bool res;
@@ -520,9 +520,9 @@ void getCalledFuncitonInter(Function* func, vector<pair<CallInst*, Function*>>& 
                     continue;
                 if(GlobalCtx.Callees[callInst].size() > 1)
                 {
-                    outs() << "direct call not one target call!!!" << "\n";
-                    outs() << "call instruction: " << *callInst << "\n";
-                    outs() << "in function: " << callInst->getFunction()->getName() << "\n";
+                    OP << "direct call not one target call!!!" << "\n";
+                    OP << "call instruction: " << *callInst << "\n";
+                    OP << "in function: " << callInst->getFunction()->getName() << "\n";
                 }
             }
             
@@ -680,9 +680,9 @@ vector<pair<CallInst*, Function*>> getCalledFunctionInPathsInter(vector<vector<B
                             continue;
                         if(GlobalCtx.Callees[callinstr].size() > 1)
                         {
-                            outs() << "direct call not one target call!!!" << "\n";
-                            outs() << "call instruction: " << *callinstr << "\n";
-                            outs() << "in function: " << callinstr->getFunction()->getName() << "\n";
+                            OP << "direct call not one target call!!!" << "\n";
+                            OP << "call instruction: " << *callinstr << "\n";
+                            OP << "in function: " << callinstr->getFunction()->getName() << "\n";
                         }
                     }
                     for(Function* callee: GlobalCtx.Callees[callinstr])
@@ -1459,14 +1459,14 @@ vector<vector<BBConstraint*>> getConstraintsPathsFromLabeledBBInter(BasicBlock* 
 
 set<vector<BBConstraint*>> getConstraintsPathsFromLabeledBBIntra(BasicBlock* BB)
 {
-    outs() << "start DFS find path from " << BB->getName() << "\n";
+    OP << "start DFS find path from " << BB->getName() << "\n";
     set<BasicBlock*> visited = set<BasicBlock*>();
     vector<BBConstraint*> bbConstraintInPath = vector<BBConstraint*>();
     // vector<vector<BBConstraint*>> res; 
     set<vector<BBConstraint*>> res;
     unsigned times = 0;
     getConstraintsDFSIntra(BB, bbConstraintInPath, res, visited, times);
-    outs() << "finish DFS find path from " << BB->getName() << "\n";
+    OP << "finish DFS find path from " << BB->getName() << "\n";
     return res;
 } 
 
@@ -1532,16 +1532,16 @@ set<vector<BBConstraint*>> findLabeledBlockBFS(BasicBlock* startBB, set<BasicBlo
         {
             if(labeledBlocks.count(bb) > 0 && visitedLabeledBlocks.count(bb) == 0)
             {
-                outs() << "get a labeled basic block\n";
-                outs() << *bb << "\n";
+                OP << "get a labeled basic block\n";
+                OP << *bb << "\n";
                 set<vector<BBConstraint*>> constraintsPaths = getConstraintsPathsFromLabeledBBIntra(bb);
                 res.insert(constraintsPaths.begin(), constraintsPaths.end());
             }
         }
         else
         {
-            outs() << "called function in this block\n";
-            outs() << *bb << "\n";
+            OP << "called function in this block\n";
+            OP << *bb << "\n";
             set<vector<BBConstraint*>> constraintsInFunc = getConstraintsPathsFromLabeledBBIntra(bb);
             for(Function* F: calledFunctions)
             {
@@ -1555,8 +1555,8 @@ set<vector<BBConstraint*>> findLabeledBlockBFS(BasicBlock* startBB, set<BasicBlo
                     res.insert(subFuncConstraints.begin(), subFuncConstraints.end());
                     continue;
                 }
-                outs() << "constraints in this function: " << constraintsInFunc.size() << "\n";
-                outs() << "constraints in sub function: " << subFuncConstraints.size() << "\n";
+                OP << "constraints in this function: " << constraintsInFunc.size() << "\n";
+                OP << "constraints in sub function: " << subFuncConstraints.size() << "\n";
                 for(auto p1: constraintsInFunc)
                 {
                     for(auto p2: subFuncConstraints)
@@ -1576,43 +1576,43 @@ set<vector<BBConstraint*>> findLabeledBlockBFS(BasicBlock* startBB, set<BasicBlo
             q.push(predBB);
         }
     }
-    outs() << "finish BFS\n";
+    OP << "finish BFS\n";
     return res;
 }
 
 // vector<vector<BBConstraint*>> getBBConstraintsPathsInFunc(Function* F)
 set<vector<BBConstraint*>> getBBConstraintsPathsInFunc(Function* F, set<Function*> visitedFunctions)
 {
-    outs() << "In function: " << F->getName() << "\n";
+    OP << "In function: " << F->getName() << "\n";
     if(visitedFunctions.count(F) > 0)
     {
-        outs() << "visited function, return!!!\n";
+        OP << "visited function, return!!!\n";
         return set<vector<BBConstraint*>>();
     }
     visitedFunctions.insert(F);
     if(funcResCache.count(F))
     {
-        outs() << "found in cache, return\n";
+        OP << "found in cache, return\n";
         return funcResCache[F];
     }
     vector<BasicBlock*> startBBs = getStartBasicBlocksInFunc(F);
-    outs() << "total found " << startBBs.size() << " start blocks\n";
+    OP << "total found " << startBBs.size() << " start blocks\n";
     set<vector<BBConstraint*>> res;
     set<BasicBlock*> visited = set<BasicBlock*>();
     for(BasicBlock* startBB : startBBs)
     {
-        outs() << "BFS from block: " << startBB->getName() << "\n";
+        OP << "BFS from block: " << startBB->getName() << "\n";
         set<vector<BBConstraint*>> constraints = findLabeledBlockBFS(startBB, visited, visitedFunctions);
         res.insert(constraints.begin(), constraints.end());
     }
     funcResCache[F] = res;
-    outs() << "finish analyze function " << F->getName() << "\n";
+    OP << "finish analyze function " << F->getName() << "\n";
     return res;
 }
 
 vector<map<unsigned, ConstBlockMap>> getConstraintsWrapper(Function* F, map<unsigned, ConstBlockMap>& argConstMap, raw_fd_ostream& outfile)
 {
-    outs() << "process argument const map\n";
+    OP << "process argument const map\n";
     vector<map<unsigned, ConstBlockMap>> r;
     labeledBlocks.clear();
     relatedFuncs.clear();
@@ -1620,7 +1620,7 @@ vector<map<unsigned, ConstBlockMap>> getConstraintsWrapper(Function* F, map<unsi
     visitedLabeledBlocks.clear();
     set<Function*> visitedFunctions = set<Function*>();
     funcResCache.clear();
-    outs() << "labeled all target blocks\n";
+    OP << "labeled all target blocks\n";
     if(labeledBlocks.size() == 0)
         return r;
     outfile << "func name: " << F->getName() << "; " << "arg num: " << F->arg_size() << "\n";
@@ -1722,7 +1722,7 @@ vector<DFSStartBB*> getDFSStartBBsBFSInFunc(Function* F)
     set<BasicBlock*> visitedBlocks = set<BasicBlock*>();
     set<Function*> visitedFuncs = set<Function*>();
     vector<CallInst*> callList = vector<CallInst*>();
-    outs() << "start bb num: " << startBBs.size() << "\n";
+    OP << "start bb num: " << startBBs.size() << "\n";
     for(auto startBB : startBBs)
     {
         getDFSStartBBsBFSFromBasicBlock(startBB, res, callList, visitedBlocks, visitedFuncs);
@@ -1841,13 +1841,13 @@ void getPathFromBasicBlockDFS(BasicBlock* BB, vector<CallInst*> callList, vector
                 else
                 {
                     vector<BBConstraint*> pathFromCallBlock;
-                    outs() << "analyze a call block in the path in function " << BB->getParent()->getName() << "\n";
-                    outs() << *BB << "\n";
+                    OP << "analyze a call block in the path in function " << BB->getParent()->getName() << "\n";
+                    OP << *BB << "\n";
                     getPathFromBasicBlockDFS(BB, callList, pathFromCallBlock, pathsFromCallBlock, visited, visitedFuncs, true);
-                    outs() << "finish analyze call block in the path\n";
-                    outs() << "path length: " << path.size() << "\n";
-                    outs() << "paths num in sub functions: " << subFuncConstraints.size() << "\n";
-                    outs() << "paths num from call block: " << pathsFromCallBlock.size() << "\n";
+                    OP << "finish analyze call block in the path\n";
+                    OP << "path length: " << path.size() << "\n";
+                    OP << "paths num in sub functions: " << subFuncConstraints.size() << "\n";
+                    OP << "paths num from call block: " << pathsFromCallBlock.size() << "\n";
                     blockResCache[BB] = pathsFromCallBlock;
                 }
                 if(subFuncConstraints.size() != 0)
@@ -1907,8 +1907,8 @@ void getPathFromBasicBlockDFS(BasicBlock* BB, vector<CallInst*> callList, vector
         {
             /*CallInst* callInst = callList[callList.size() - 1];
             vector<CallInst*> newCallList(callList.begin(), callList.end() - 1);
-            outs() << "inter function analyze in function " << BB->getParent()->getName() << " parent function " << callInst->getFunction()->getName() << "\n";
-            outs() << *(callInst->getParent()) << "\n";
+            OP << "inter function analyze in function " << BB->getParent()->getName() << " parent function " << callInst->getFunction()->getName() << "\n";
+            OP << *(callInst->getParent()) << "\n";
             // getPathFromBasicBlockDFS(callInst->getParent(), newCallList, path, paths, visited, visitedFuncs, true);*/
             if(nopredBlokcSubpaths.count(BB) && nopredBlokcSubpaths[BB].count(path))
                 return;
@@ -1921,7 +1921,7 @@ void getPathFromBasicBlockDFS(BasicBlock* BB, vector<CallInst*> callList, vector
             {
                 CallInst* callInst = callList[callList.size() - 1];
                 vector<CallInst*> newCallList(callList.begin(), callList.end() - 1);
-                outs() << "inter function analyze in function " << BB->getParent()->getName() << " parent function " << callInst->getFunction()->getName() << "\n";
+                OP << "inter function analyze in function " << BB->getParent()->getName() << " parent function " << callInst->getFunction()->getName() << "\n";
                 vector<BBConstraint*> pathInCaller;
                 getPathFromBasicBlockDFS(callInst->getParent(), newCallList, pathInCaller, pathsInCaller, visited, visitedFuncs, true);
                 blockResCache[BB] = pathsInCaller;
@@ -1966,9 +1966,9 @@ set<vector<BBConstraint*>> getBBConstraintsInSubFuncNew(Function* F, set<Functio
     visitedFuncs.insert(F);
     if(funcResCache.count(F))
         return funcResCache[F];
-    outs() << "sub function: " << F->getName() << "\n";
+    OP << "sub function: " << F->getName() << "\n";
     vector<DFSStartBB*> dfsStartBBs = getDFSStartBBsBFSInFunc(F);
-    outs() << "sub function found dfs start bb num: " << dfsStartBBs.size() << "\n";
+    OP << "sub function found dfs start bb num: " << dfsStartBBs.size() << "\n";
     for(DFSStartBB* dfsStartBB : dfsStartBBs)
     {
         BasicBlock* BB = dfsStartBB->BB;
@@ -1981,7 +1981,7 @@ set<vector<BBConstraint*>> getBBConstraintsInSubFuncNew(Function* F, set<Functio
         getPathFromBasicBlockDFSNew(BB, callList, path, paths, visited, visitedFunctions, 0);
         res.insert(paths.begin(), paths.end());
     }
-    outs() << "found paths num: " << res.size() << " in " << F->getName() << "\n";
+    OP << "found paths num: " << res.size() << " in " << F->getName() << "\n";
     funcResCache[F] = res;
     return res;
 }
@@ -2038,7 +2038,7 @@ void getPathFromBasicBlockDFSNew(BasicBlock* BB, vector<CallInst*> callList, vec
                         Function* F = item.second;
                         if(visitedFuncs.count(F))
                             continue;
-                        outs() << "function name: " << F->getName() << "\n";
+                        OP << "function name: " << F->getName() << "\n";
                         set<vector<BBConstraint*>> constraintsInFunc;
                         if(funcResCache.count(F))
                         {
@@ -2127,7 +2127,7 @@ void getPathFromBasicBlockDFSNew(BasicBlock* BB, vector<CallInst*> callList, vec
             {
                 CallInst* callInst = callList[callList.size() - 1];
                 vector<CallInst*> newCallList(callList.begin(), callList.end() - 1);
-                outs() << "inter function analyze in function " << BB->getParent()->getName() << " parent function " << callInst->getFunction()->getName() << "\n";
+                OP << "inter function analyze in function " << BB->getParent()->getName() << " parent function " << callInst->getFunction()->getName() << "\n";
                 vector<BBConstraint*> pathInCaller;
                 getPathFromBasicBlockDFSNew(callInst->getParent(), newCallList, pathInCaller, pathsInCaller, visited, visitedFuncs, true, loop+1);
                 upPaths[BB] = pathsInCaller;
@@ -2189,7 +2189,7 @@ void getPathFromBasicBlockDFSNew(BasicBlock* BB, vector<CallInst*> callList, vec
 
 map<BasicBlock*, vector<map<unsigned, ConstBlockMap>>> getConstraintsWrapperNew(Function* F, map<unsigned, ConstBlockMap>& argConstMap, raw_fd_ostream& outfile)
 {
-    outs() << "process argument const map\n";
+    OP << "process argument const map\n";
     labeledBlocks.clear();
     relatedFuncs.clear();
     labeledBlocks = labelBasicBlocks(argConstMap);
@@ -2274,13 +2274,13 @@ map<BasicBlock*, vector<map<unsigned, ConstBlockMap>>> getConstraintsWrapperNew(
 map<unsigned, Function*> handleIoctlHandlersGlobalVar(GlobalVariable* ioctlHandlers)
 {
     map<unsigned, Function*> res;
-    outs() << "ioctl_handlers:\n";
-    outs() << *ioctlHandlers << "\n";
+    OP << "ioctl_handlers:\n";
+    OP << *ioctlHandlers << "\n";
     ConstantArray* ioctlHandlersArray = dyn_cast<ConstantArray>(ioctlHandlers->getInitializer());
     if(ioctlHandlersArray == nullptr)
         return res;
-    outs() << "constant array:\n";
-    outs() << *ioctlHandlersArray << "\n";
+    OP << "constant array:\n";
+    OP << *ioctlHandlersArray << "\n";
     for(int i = 0; i < ioctlHandlersArray->getNumOperands(); i++)
     {
         ConstantStruct* ioctlHandler = dyn_cast<ConstantStruct>(ioctlHandlersArray->getOperand(i));
@@ -2304,7 +2304,7 @@ void handleSndSeqIoctl(Function* targetFunction, InfoItem* info, raw_fd_ostream&
         if (g == nullptr) {
             continue;
         }
-        outs() << "global name: " << g->getName() << "\n";
+        OP << "global name: " << g->getName() << "\n";
         if(g->getName() == "ioctl_handlers")
         {
             ioctlHandlers = g;
@@ -2409,7 +2409,7 @@ void handleUcmaWrite(Function* targetFunction, InfoItem* info, raw_fd_ostream& o
     vector<string> signatures;
     for (auto &item: res)
     {
-        outs() << "idx: " << item.first << " func: " << item.second->getName().str() << "\n";
+        OP << "idx: " << item.first << " func: " << item.second->getName().str() << "\n";
         string s = str + "|C[" + to_string(item.first) + "]|C[]";
         s += " ";
         s += "0";
@@ -2516,7 +2516,7 @@ map<unsigned, ConstBlockMap> getTargetBlocksInFuncByArgMap(Function* F, vector<v
             res[argNo] = ConstBlockMap();
             continue;
         }
-        outs() << "find related constant of argIdx " << argNo << "\n";
+        OP << "find related constant of argIdx " << argNo << "\n";
         res[argNo] = getTargetBlockByArg(F, argNo, visited, 0);
     }
     GlobalCtx.FoundFunctionCache[F] = res;
@@ -2544,7 +2544,7 @@ map<unsigned, ConstBlockMap> getTargetBlocksInFuncByArgMap(Function* F, vector<v
             res[argNo] = ConstBlockMap();
             continue;
         }
-        outs() << "find related constant of argIdx " << argNo << " of " << F->getName() << "\n";
+        OP << "find related constant of argIdx " << argNo << " of " << F->getName() << "\n";
         res[argNo] = getTargetBlockByArg(F, argNo, visited, 0);
     }
     GlobalCtx.FoundFunctionCache[F] = res;
@@ -2606,7 +2606,7 @@ void testFindBlocks(Function* F)
     std::error_code OutErrorInfo;
     std::string funcName = F->getName().str();
     raw_fd_ostream blocksFile(StringRef("./" + funcName + "_target_blocks.txt"), OutErrorInfo, sys::fs::CD_CreateAlways);
-    outs() << "Function: " << funcName << "\n";
+    OP << "Function: " << funcName << "\n";
     outputBlocks(getTargetBlocksInFunc(F), blocksFile);
 }
 
@@ -2682,7 +2682,7 @@ bool isRetFixedValueInPath(ReturnInst* retInst, std::vector<BasicBlock*> path, i
                     return true;
                 }
                 else{
-                    outs() << *(U.get()) << "\n";
+                    OP << *(U.get()) << "\n";
                     return false;
                 }
             }
@@ -2704,7 +2704,7 @@ ReturnInst* getRetInstInPath(vector<BasicBlock*> path)
             return retInst;
         }
     }
-    outs() << "in function: " << endBB->getParent()->getName() << "\n"; 
+    OP << "in function: " << endBB->getParent()->getName() << "\n"; 
     return retInst;
 }
 
@@ -2716,7 +2716,7 @@ bool isRetFixedNegativeInPaths(vector<vector<BasicBlock*>>& paths)
         ReturnInst* retInst = getRetInstInPath(path);
         if(retInst == nullptr)
         {
-            outs() << "can't find return instruction, something wrong!!!" << "\n";
+            OP << "can't find return instruction, something wrong!!!" << "\n";
             return  false;
         }
         int64_t value = 0;
@@ -2753,8 +2753,8 @@ vector<string> getNetDeviceNameByAllocNetdev()
                     {
                         if(CallInst* callInst = dyn_cast<CallInst>(user))
                         {
-                            outs() << "in function: " << callInst->getFunction()->getName() << "\n";
-                            outs() << "alloc_netdev_mqs: " << *callInst << "\n";
+                            OP << "in function: " << callInst->getFunction()->getName() << "\n";
+                            OP << "alloc_netdev_mqs: " << *callInst << "\n";
                             Value* op = callInst->getArgOperand(1);
                             if(op->getValueID() == Value::ConstantExprVal)
                             {
@@ -2762,7 +2762,7 @@ vector<string> getNetDeviceNameByAllocNetdev()
                                 if(expr->getOpcode() == Instruction::GetElementPtr)
                                 {
                                     string str = getDeviceString(op);
-                                    outs() << "str: " << str << "\n";
+                                    OP << "str: " << str << "\n";
                                     res.push_back(str);
                                 }
                             }

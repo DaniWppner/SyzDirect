@@ -270,7 +270,7 @@ vector<string> handleMmapSignature(vector<string> sigs)
   vector<string> res;
   for(string s : sigs)
   {
-    outs() << "origin mmap signature: " << s << "\n";
+    OP << "origin mmap signature: " << s << "\n";
     vector<string> splitRes;
     splitString(s, splitRes, "|");
     string str = "";
@@ -309,7 +309,7 @@ int main(int argc, char **argv) {
 
   map<string, Function*> SyscallEntryFunctionPtr;
 
-  outs() << kernelBCDir << "\n";
+  OP << kernelBCDir << "\n";
   
   for (const auto& p : filesystem::recursive_directory_iterator(std::string(kernelBCDir))) {
       if (!filesystem::is_directory(p)) {
@@ -492,7 +492,7 @@ int main(int argc, char **argv) {
             break;
         }
       }
-      outs() << syscallName << "\n";
+      OP << syscallName << "\n";
       SyscallInstance* syscall = nullptr;
       if (family != 0 || type != 0 || protocol != 0) {
         syscall = generator->AddSyscall(syscallName, devStr, (int)family, (int)type, (int)protocol);
@@ -504,7 +504,7 @@ int main(int argc, char **argv) {
       }
     }
 
-    outs() << "\n" <<  generator->serialize();
+    OP << "\n" <<  generator->serialize();
     configFile.close();
     exit(0);
   }
@@ -515,12 +515,12 @@ int main(int argc, char **argv) {
       case DEVICE: {
         auto deviceInfoItem = static_cast<DeviceInfoItem*>(item);
         if (deviceInfoItem->name != "?") {
-          outs() << "[+] Device " << deviceInfoItem->name << "@"  << deviceInfoItem->type << "\n";
-          outs() << "|--- Major " << deviceInfoItem->major << " Minor " << deviceInfoItem->minor << "\n";
+          OP << "[+] Device " << deviceInfoItem->name << "@"  << deviceInfoItem->type << "\n";
+          OP << "|--- Major " << deviceInfoItem->major << " Minor " << deviceInfoItem->minor << "\n";
           for (auto handler : deviceInfoItem->SyscallHandler) {
             auto syscallName = handler.first;
             auto handlerName = handler.second->getName();
-            outs() << "|---|--- " << syscallName << ": " << handlerName << "\n";
+            OP << "|---|--- " << syscallName << ": " << handlerName << "\n";
           }
         }
         break;
@@ -528,19 +528,19 @@ int main(int argc, char **argv) {
       case FILESYSTEM: {
         FilesystemInfoItem* filesystemInfoItem = static_cast<FilesystemInfoItem*>(item);
         if (filesystemInfoItem->name != "?") {
-          outs() << "[+] filesystem " << filesystemInfoItem->name << "\n";
+          OP << "[+] filesystem " << filesystemInfoItem->name << "\n";
           string ftStruName = "none";
           if (filesystemInfoItem->filesystemTypeStruct != nullptr) {
             ftStruName = filesystemInfoItem->filesystemTypeStruct->getName().str();
           }
-          outs() << "|--- file system type struct: " << ftStruName << "\n";
+          OP << "|--- file system type struct: " << ftStruName << "\n";
           for(GlobalVariable* globalVar:filesystemInfoItem->fileOperations)
           {
-            outs() << "|--- file operations: " << globalVar->getName() << "\n";
+            OP << "|--- file operations: " << globalVar->getName() << "\n";
           }
           for(pair<string, Function*> item:filesystemInfoItem->SyscallHandler)
           {
-            outs() << "|---|--- " << item.first << ": " << item.second->getName() << "\n";
+            OP << "|---|--- " << item.first << ": " << item.second->getName() << "\n";
           }
         }
         break;
@@ -548,34 +548,34 @@ int main(int argc, char **argv) {
       case NETWORK:
       auto networkInterfaceInfoItem = static_cast<NetworkInterfaceInfoItem*>(item);
         if (networkInterfaceInfoItem->name != "?") {
-          outs() << "[+] Network " << networkInterfaceInfoItem->name << "\n";
-          // outs() << "|--- family " << networkInterfaceInfoItem->family << " type " << networkInterfaceInfoItem->type << "\n";
-          outs() << "|--- family " << networkInterfaceInfoItem->family << " type " << networkInterfaceInfoItem->type << " protocol " << networkInterfaceInfoItem->protocol <<"\n";
+          OP << "[+] Network " << networkInterfaceInfoItem->name << "\n";
+          // OP << "|--- family " << networkInterfaceInfoItem->family << " type " << networkInterfaceInfoItem->type << "\n";
+          OP << "|--- family " << networkInterfaceInfoItem->family << " type " << networkInterfaceInfoItem->type << " protocol " << networkInterfaceInfoItem->protocol <<"\n";
           for (auto handler : networkInterfaceInfoItem->SyscallHandler) {
             auto syscallName = handler.first;
             auto handlerName = handler.second->getName();
-            outs() << "|---|--- " << syscallName << ": " << handlerName << "\n";
+            OP << "|---|--- " << syscallName << ": " << handlerName << "\n";
           }
           if(networkInterfaceInfoItem->family == AF_NETLINK)
           {
             NetlinkInfoItem* netlinkInfoItem = static_cast<NetlinkInfoItem*>(networkInterfaceInfoItem);
             if(netlinkInfoItem->SendmsgHandler != nullptr)
-              outs() << "|---|--- " << "real sendmsg" << ": " << netlinkInfoItem->SendmsgHandler->getName() << "\n";
+              OP << "|---|--- " << "real sendmsg" << ": " << netlinkInfoItem->SendmsgHandler->getName() << "\n";
             if(netlinkInfoItem->protocol == NETLINK_ROUTE)
             {
               RtnetlinkInfoItem* rtnetlinkInfoItem = static_cast<RtnetlinkInfoItem*>(netlinkInfoItem);
-              outs() << "|---|--- " << "rtnetlink handlers: \n";
+              OP << "|---|--- " << "rtnetlink handlers: \n";
               for(auto item: rtnetlinkInfoItem->RtnetlinkHandlers)
               {
-                outs() << "|---|---|--- " << "protocol: " << get<0>(item) << "\n";
-                outs() << "|---|---|--- " << "msgtype: " << get<1>(item) << "\n";
+                OP << "|---|---|--- " << "protocol: " << get<0>(item) << "\n";
+                OP << "|---|---|--- " << "msgtype: " << get<1>(item) << "\n";
                 if(get<2>(item) != nullptr)
                 {
-                  outs() << "|---|---|--- " << "doit: " << get<2>(item)->getName() << "\n";
+                  OP << "|---|---|--- " << "doit: " << get<2>(item)->getName() << "\n";
                 }
                 if(get<3>(item) != nullptr)
                 {
-                  outs() << "|---|---|--- " << "dumpit: " << get<3>(item)->getName() << "\n";
+                  OP << "|---|---|--- " << "dumpit: " << get<3>(item)->getName() << "\n";
                 }
               }
             }
@@ -697,8 +697,8 @@ int main(int argc, char **argv) {
   raw_fd_ostream constraintsDebug(StringRef("./constraintsDebug"), OutErrorInfo, sys::fs::CD_CreateAlways);
   raw_fd_ostream signatureFile(StringRef("./kernel_signature_full"), OutErrorInfo, sys::fs::CD_CreateAlways);
   raw_fd_ostream signatureFileWithInfo(StringRef("./kernel_signature_with_info_full"), OutErrorInfo, sys::fs::CD_CreateAlways);
-  outs() << "start output\n";
-  outs() << "common syscall number: " << GlobalCtx.AllSignatures.size() << "\n";
+  OP << "start output\n";
+  OP << "common syscall number: " << GlobalCtx.AllSignatures.size() << "\n";
 
   for (auto signature: GlobalCtx.AllSignatures) {
     string str = signature->getSyscallType();
@@ -708,9 +708,9 @@ int main(int argc, char **argv) {
     {
       func = getFunctionFromModules(func->getName());
     }
-    outs() << "common syscalls: " << func->getName() << "\n";
+    OP << "common syscalls: " << func->getName() << "\n";
     vector<string> res = vector<string>();
-    outs() << "arg size: " << ArgumentsConstMap.size() << "\n";
+    OP << "arg size: " << ArgumentsConstMap.size() << "\n";
     map<string, int> StringCompareSyscallArg = {
 			{"setxattr", 1}, 
 			{"lsetxattr", 1},
@@ -719,7 +719,7 @@ int main(int argc, char **argv) {
 		};
     for(auto item : ArgumentsConstMap)
     {
-      outs() << "arg " << item.first << " " << item.second.size() << "\n";
+      OP << "arg " << item.first << " " << item.second.size() << "\n";
     }
     if(str == "fcntl")
     {
@@ -862,7 +862,7 @@ int main(int argc, char **argv) {
 
     if(allDeviceName.count(syscall) == 0)
       allDeviceName[syscall] = set<string>();
-    outs() << "syscall name: " << item.first << "\n";
+    OP << "syscall name: " << item.first << "\n";
 
     GenerateFunctionCandidate(&GlobalCtx, syscall, syscallFunction, item.second, GlobalSyscallRecrusiveCount[syscall]);
     unordered_map<Function*, bool> handlerFuncs = item.second;
@@ -882,7 +882,7 @@ int main(int argc, char **argv) {
       if (func && func->isDeclaration() && func->hasName()) {
         func = getFunctionFromModules(func->getName());
       }
-      outs() << "Candidate of " << syscall << ": " << func->getName() << "\n";
+      OP << "Candidate of " << syscall << ": " << func->getName() << "\n";
 
 
       if (xattrSyscall2Desc.count(syscall) != 0) {
@@ -946,8 +946,8 @@ int main(int argc, char **argv) {
           for (auto a:ArgumentsConstMap){
             for(auto b:a.second){
               if(b->switchBlock)
-                b->switchBlock->printAsOperand(outs());
-              outs() << "\n";
+                b->switchBlock->printAsOperand(OP());
+              OP << "\n";
             }
           }
         }
@@ -1007,7 +1007,7 @@ int main(int argc, char **argv) {
       {
         switch (infoItem->ItemType)
         {
-          outs() << infoItem->ItemType << "\n";
+          OP << infoItem->ItemType << "\n";
           case DEVICE:{
             auto deviceInfoItem = static_cast<DeviceInfoItem*>(infoItem);
             vector<string> res;
@@ -1080,7 +1080,7 @@ int main(int argc, char **argv) {
             string fsname=filesystemInfoItem->generateDeviceSignature(func);
             
             if (fsname=="bdev"){
-              outs() << "BDEV!!!!!" << syscall << "\n";
+              OP << "BDEV!!!!!" << syscall << "\n";
               for(auto subsys: GlobalCtx.SubsystemInfo){
                 if (subsys->ItemType!=DEVICE)
                   continue;
@@ -1246,10 +1246,10 @@ int main(int argc, char **argv) {
     }
   }
 
-  outs() << "total found dfs start bb: " << dfsStartBBNum << "\n";
+  OP << "total found dfs start bb: " << dfsStartBBNum << "\n";
   handleDrmIoctl(ModuleMap, signatureFile);
   handleSpecial(GlobalCtx.Modules, signatureFile);
   endTime = clock();
-  outs() << "total time: " << (endTime - startTime) / CLOCKS_PER_SEC << "s\n";
+  OP << "total time: " << (endTime - startTime) / CLOCKS_PER_SEC << "s\n";
 	return 0;
 }

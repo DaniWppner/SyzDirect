@@ -38,7 +38,7 @@ map<std::string, Function*> DeviceExtractorPass::ProcessFileOperations(Value* ha
     }
     if (auto constantStruct = dyn_cast<ConstantStruct>(handlerStruct)) {
         // file operations
-        outs() << "file operations: " << *constantStruct << "\n";
+        OP << "file operations: " << *constantStruct << "\n";
         if (constantStruct->getType()->getName() != "struct.file_operations") {
             return result;
         }
@@ -174,22 +174,22 @@ string DeviceExtractorPass::ExtractDevNameFromFunction(Function* f) {
                 if (CI->getCalledFunction() && CI->getCalledFunction()->hasName()) {
                     auto calledFuncName = CI->getCalledFunction()->getName();
                     if (calledFuncName == "register_chrdev_region") {
-                        outs() << "register chrdev region: " << *CI << "\n";
+                        OP << "register chrdev region: " << *CI << "\n";
                         if (devName == "" || devName == "?") {
                             devName = getDeviceString(CI->getArgOperand(2));
                         }
                     } else if (calledFuncName == "alloc_chrdev_region") {
-                        outs() << "alloc_chrdev_region: " << *CI << "\n";
+                        OP << "alloc_chrdev_region: " << *CI << "\n";
                         if (devName == "" || devName == "?") {
                             devName = getDeviceString(CI->getArgOperand(3));
                         }
                     } else if (calledFuncName == "device_create") {
-                        outs() << "device_create: " << *CI << "\n";
+                        OP << "device_create: " << *CI << "\n";
                         if (devName == "" || devName == "?") {
                             devName = getDeviceString(CI->getArgOperand(4));
                         }
                     } else if (calledFuncName == "dev_set_name") {
-                        outs() << "dev_set_name: " << *CI << "\n";
+                        OP << "dev_set_name: " << *CI << "\n";
                         if (devName == "" || devName == "?") {
                             devName = getDeviceString(CI->getArgOperand(1));
                         }
@@ -212,7 +212,7 @@ string DeviceExtractorPass::ExtractBlockDevNameFromFunction(Function* f) {
                 if (CI->getCalledFunction() && CI->getCalledFunction()->hasName()) {
                     auto calledFuncName = CI->getCalledFunction()->getName();
                     if (calledFuncName == "__register_blkdev" || calledFuncName == "unregister_blkdev") {
-                        outs() << "register blkdev: " << *CI << "\n";
+                        OP << "register blkdev: " << *CI << "\n";
                         if (devName == "" || devName == "?") {
                             devName = getDeviceString(CI->getArgOperand(1));
                         }
@@ -226,7 +226,7 @@ string DeviceExtractorPass::ExtractBlockDevNameFromFunction(Function* f) {
 
 
 void DeviceExtractorPass::ProcessMiscDeviceInit(CallInst* callInst) {
-    outs() << "[*] new misc call: " << *callInst << "\n";
+    OP << "[*] new misc call: " << *callInst << "\n";
     DeviceInfoItem* deviceInfoItem = new DeviceInfoItem();
     deviceInfoItem->ItemType = DEVICE;
     deviceInfoItem->type = MISCDEVICE;
@@ -236,29 +236,29 @@ void DeviceExtractorPass::ProcessMiscDeviceInit(CallInst* callInst) {
     if (auto gv = dyn_cast<GlobalVariable>(arg)) {
         if (gv->getValueType()->isStructTy()) {
             if (auto constStruct = dyn_cast<ConstantStruct>(gv->getInitializer())) {
-                outs() << *constStruct << "\n";
+                OP << *constStruct << "\n";
                 auto minorVal = constStruct->getOperand(0);
                 auto minor = getIntValue(minorVal);
-                outs() << "[+] Minor: " << minor << "\n";
+                OP << "[+] Minor: " << minor << "\n";
                 deviceInfoItem->minor = minor;
                 auto deviceNameVal = constStruct->getOperand(1);
                 auto deviceName = getDeviceString(deviceNameVal);
                 deviceInfoItem->name = deviceName;
-                outs() << "[+] Device name: " << deviceName << "\n";
+                OP << "[+] Device name: " << deviceName << "\n";
                 auto fileOperations = getStructValue(constStruct->getOperand(2));
                 if (fileOperations == nullptr && Ctx->GlobalStructMap.count(constStruct->getOperand(2)->getName().str())) {
-                    outs() << *(Ctx->GlobalStructMap[constStruct->getOperand(2)->getName().str()]) << '\n';
+                    OP << *(Ctx->GlobalStructMap[constStruct->getOperand(2)->getName().str()]) << '\n';
                     fileOperations = getStructValue(Ctx->GlobalStructMap[constStruct->getOperand(2)->getName().str()]);
                 }
                 if (fileOperations) {
-                    outs() << "[+] Operations: " << *fileOperations << "\n";
+                    OP << "[+] Operations: " << *fileOperations << "\n";
                     deviceInfoItem->OperationStruct = fileOperations;
                     deviceInfoItem->SyscallHandler = ProcessFileOperations(fileOperations);
                 }
             }
         }
     } else {
-        outs() << "[-] local variable: " << *arg << "\n";
+        OP << "[-] local variable: " << *arg << "\n";
     }
     if (deviceInfoItem->name == "?" || deviceInfoItem->name == "") {
         auto caller = callInst->getFunction();
@@ -279,7 +279,7 @@ void DeviceExtractorPass::ProcessMiscDeviceInit(CallInst* callInst) {
 }
 
 void DeviceExtractorPass::ProcessCdevInit(CallInst* callInst) {
-    outs() << "[*] new cdev call: " << *callInst << "\n";
+    OP << "[*] new cdev call: " << *callInst << "\n";
     DeviceInfoItem* deviceInfoItem = new DeviceInfoItem();
     deviceInfoItem->ItemType = DEVICE;
     deviceInfoItem->type = CDEV;
@@ -294,8 +294,8 @@ void DeviceExtractorPass::ProcessCdevInit(CallInst* callInst) {
                 int minor = deviceT & 0xfffff;
                 deviceInfoItem->major = major;
                 deviceInfoItem->minor = minor;
-                outs() << "[+] Major: " << major << "\n";
-                outs() << "[+] Minor: " << minor << "\n";
+                OP << "[+] Major: " << major << "\n";
+                OP << "[+] Minor: " << minor << "\n";
             } 
         } 
     }
@@ -316,7 +316,7 @@ void DeviceExtractorPass::ProcessCdevInit(CallInst* callInst) {
     auto fopsArg = callInst->getArgOperand(1);
     auto fops = getStructValue(fopsArg);
     if (!fops && Ctx->GlobalStructMap.count(fopsArg->getName().str())) {
-        outs() << *(Ctx->GlobalStructMap[fopsArg->getName().str()]) << '\n';
+        OP << *(Ctx->GlobalStructMap[fopsArg->getName().str()]) << '\n';
         fops = getStructValue(Ctx->GlobalStructMap[fopsArg->getName().str()]);
         // memFops = Ctx->
     }
@@ -329,7 +329,7 @@ void DeviceExtractorPass::ProcessCdevInit(CallInst* callInst) {
 
 
 void DeviceExtractorPass::ProcessSndRegisterDevice(CallInst* callInst) {
-    outs() << "[*] new snd call: " << *callInst << "\n";
+    OP << "[*] new snd call: " << *callInst << "\n";
     DeviceInfoItem* deviceInfoItem = new DeviceInfoItem();
     deviceInfoItem->ItemType = DEVICE;
     deviceInfoItem->type = CHARDEVICE;
@@ -356,7 +356,7 @@ void DeviceExtractorPass::ProcessSndRegisterDevice(CallInst* callInst) {
 }
 
 void DeviceExtractorPass::ProcessCdevAdd(CallInst* callInst) {
-    outs() << "[*] new cdev add: " << *callInst << "\n";
+    OP << "[*] new cdev add: " << *callInst << "\n";
     DeviceInfoItem* deviceInfoItem = new DeviceInfoItem();
     deviceInfoItem->ItemType = DEVICE;
     deviceInfoItem->type = CHARDEVICE;
@@ -407,7 +407,7 @@ void DeviceExtractorPass::ProcessCdevAdd(CallInst* callInst) {
 
 
 void DeviceExtractorPass::ProcessRegisterChrdev(CallInst* callInst) {
-    outs() << "[*] new chrdev call: " << *callInst << "\n";
+    OP << "[*] new chrdev call: " << *callInst << "\n";
     DeviceInfoItem* deviceInfoItem = new DeviceInfoItem();
     deviceInfoItem->ItemType = DEVICE;
     deviceInfoItem->type = CHARDEVICE;
@@ -415,12 +415,12 @@ void DeviceExtractorPass::ProcessRegisterChrdev(CallInst* callInst) {
     auto majorArg = callInst->getArgOperand(0);
     auto major = getIntValue(majorArg);
     deviceInfoItem->major = major;
-    outs() << "[+] Major: " << major << "\n";
+    OP << "[+] Major: " << major << "\n";
     // dev name
     auto deviceNameArg = callInst->getArgOperand(1);
     auto deviceName = getDeviceString(deviceNameArg);
     deviceInfoItem->name = deviceName;
-    outs() << "[+] Device name: " << deviceName << "\n";
+    OP << "[+] Device name: " << deviceName << "\n";
     // fops 
     auto fopsArg = callInst->getArgOperand(2);
     auto fops = getStructValue(fopsArg);
@@ -430,7 +430,7 @@ void DeviceExtractorPass::ProcessRegisterChrdev(CallInst* callInst) {
 }
 
 void DeviceExtractorPass::Process__RegisterChrdev(CallInst* callInst) {
-    outs() << "[*] new _chrdev call: " << *callInst << "\n";
+    OP << "[*] new _chrdev call: " << *callInst << "\n";
     DeviceInfoItem* deviceInfoItem = new DeviceInfoItem();
     deviceInfoItem->ItemType = DEVICE;
     deviceInfoItem->type = CHARDEVICE;
@@ -441,13 +441,13 @@ void DeviceExtractorPass::Process__RegisterChrdev(CallInst* callInst) {
     int minor = getIntValue(minorArg);
     deviceInfoItem->major = major;
     deviceInfoItem->minor = minor;
-    outs() << "[+] Major: " << major << "\n";
-    outs() << "[+] Minor: " << minor << "\n";
+    OP << "[+] Major: " << major << "\n";
+    OP << "[+] Minor: " << minor << "\n";
     // dev name
     auto deviceNameArg = callInst->getArgOperand(3);
     auto deviceName = getDeviceString(deviceNameArg);
     deviceInfoItem->name = deviceName;
-    outs() << "[+] Device name: " << deviceName << "\n";
+    OP << "[+] Device name: " << deviceName << "\n";
     // fops 
     auto fopsArg = callInst->getArgOperand(4);
     auto fops = getStructValue(fopsArg);
@@ -457,7 +457,7 @@ void DeviceExtractorPass::Process__RegisterChrdev(CallInst* callInst) {
 }
 
 void DeviceExtractorPass::ProcessRegisterBlkdev(CallInst* callInst) {
-    outs() << "[*] new blkdev call: " << *callInst << "\n";
+    OP << "[*] new blkdev call: " << *callInst << "\n";
     auto majorArg = callInst->getArgOperand(0);
     int major = getIntValue(majorArg);
     if (major != -1) {
@@ -490,7 +490,7 @@ void DeviceExtractorPass::ProcessRegisterBlkdev(CallInst* callInst) {
 
 Value* DeviceExtractorPass::ExtractPtrAssignment(Value* ptrValue) {
     for (auto user: ptrValue->users()) {
-        outs() << "\t User: " << *user << "\n";
+        OP << "\t User: " << *user << "\n";
         if (auto storeInst = dyn_cast<StoreInst>(user)) {
             return storeInst->getValueOperand();
         } else if (auto callInst = dyn_cast<CallInst>(user)) {
@@ -516,7 +516,7 @@ set<Value*>* DeviceExtractorPass::GetAliasOfStructType(Value* value, string stru
             auto ElemType = aliasPtr->getElementType();
             if (ElemType) {
                 if (auto aliasStruct = dyn_cast<StructType>(ElemType)) {
-                    outs() << "Alias: " << *A << " " << aliasStruct->getName() << "\n";
+                    OP << "Alias: " << *A << " " << aliasStruct->getName() << "\n";
                     if (aliasStruct->getName() == structName) {
                         resSet->insert(A);
                     }
@@ -539,9 +539,9 @@ set<Value*>* DeviceExtractorPass::GetAliasSet(Value* value) {
 }
 
 void DeviceExtractorPass::ProcessAddDisk(CallInst* callInst) {
-    outs() << "[*] new adddisk: " << *callInst << "\n";
+    OP << "[*] new adddisk: " << *callInst << "\n";
     auto diskArg = callInst->getArgOperand(1);
-    outs() << "[+] Disk: " << *diskArg << "\n";
+    OP << "[+] Disk: " << *diskArg << "\n";
 
     auto deviceInfoItem = new DeviceInfoItem();
     deviceInfoItem->ItemType = DEVICE;
@@ -610,7 +610,7 @@ void DeviceExtractorPass::ProcessAddDisk(CallInst* callInst) {
 }
 
 void DeviceExtractorPass::ProcessTtyRegisterDriver(CallInst* callInst) {
-    outs() << "[*] new tty call: " << *callInst << "\n";
+    OP << "[*] new tty call: " << *callInst << "\n";
     DeviceInfoItem* deviceInfoItem = new DeviceInfoItem();
     deviceInfoItem->ItemType = DEVICE;
     deviceInfoItem->type = CHARDEVICE;
@@ -653,7 +653,7 @@ void DeviceExtractorPass::ProcessTtyRegisterDriver(CallInst* callInst) {
 }
 
 void DeviceExtractorPass::ProcessPosixClockRegister(CallInst* callInst) {
-    outs() << "[*] new posix clock call: " << *callInst << "\n";
+    OP << "[*] new posix clock call: " << *callInst << "\n";
     DeviceInfoItem* deviceInfoItem = new DeviceInfoItem();
     deviceInfoItem->ItemType = DEVICE;
     deviceInfoItem->type = CHARDEVICE;
@@ -702,7 +702,7 @@ void DeviceExtractorPass::ProcessPosixClockRegister(CallInst* callInst) {
 }
 
 void DeviceExtractorPass::ProcessAnonInodeGetfile(CallInst* callInst) {
-    outs() << "[*] new anon_inode call: " << *callInst << "\n";
+    OP << "[*] new anon_inode call: " << *callInst << "\n";
     DeviceInfoItem* deviceInfoItem = new DeviceInfoItem();
     deviceInfoItem->ItemType = DEVICE;
     deviceInfoItem->type = CHARDEVICE;
@@ -735,14 +735,14 @@ void DeviceExtractorPass::ProcessAnonInodeGetfile(CallInst* callInst) {
 }
 
 void DeviceExtractorPass::ProcessDebugfsCreateFile(CallInst* callInst) {
-    outs() << "[*] new debugfs call: " << *callInst << "\n";
+    OP << "[*] new debugfs call: " << *callInst << "\n";
     DeviceInfoItem* deviceInfoItem = new DeviceInfoItem();
     deviceInfoItem->ItemType = DEVICE;
     deviceInfoItem->type = DEBUGFSDEVICE;
     auto filenameArg = callInst->getArgOperand(0);
     auto filename = getDeviceString(filenameArg);
     deviceInfoItem->name = filename;
-    outs() << "[+] Filename: " << filename << "\n";
+    OP << "[+] Filename: " << filename << "\n";
     auto directoryArg = callInst->getArgOperand(2);
     auto fopsArg = callInst->getArgOperand(4);
     auto fops = getStructValue(fopsArg);
@@ -875,7 +875,7 @@ bool DeviceExtractorPass::doFinalization(Module * M) {
             for (int i = 0; i < memdevlistArray->getNumOperands(); i++) {
                 auto memdev = dyn_cast<ConstantStruct>(memdevlistArray->getOperand(i));
                 if (memdev && memdev->getType()->getName() == "struct.memdev") {
-                    outs() << "memdev: " << *memdev << "\n";
+                    OP << "memdev: " << *memdev << "\n";
                     auto deviceInfoItem = new DeviceInfoItem();
                     deviceInfoItem->ItemType = DEVICE;
                     deviceInfoItem->type = CHARDEVICE;
@@ -969,13 +969,13 @@ bool DeviceExtractorPass::doFinalization(Module * M) {
     //         if (func.getName().str() == "device_create") {
     //             for (auto user : func.users()) {
     //                 if (auto callInst = dyn_cast<CallInst>(user)) {
-    //                     outs() << "[+] device create: " << *callInst << "\n";
+    //                     OP << "[+] device create: " << *callInst << "\n";
     //                 }
     //             }
     //         } else if (func.getName().str() == "alloc_chrdev_region") {
     //             for (auto user : func.users()) {
     //                 if (auto callInst = dyn_cast<CallInst>(user)) {
-    //                     outs() << "[+] alloc_chrdev_region: " << *callInst << "\n";
+    //                     OP << "[+] alloc_chrdev_region: " << *callInst << "\n";
     //                 }
     //             }
     //         }

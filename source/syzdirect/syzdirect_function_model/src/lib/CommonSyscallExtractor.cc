@@ -51,7 +51,7 @@ bool CommonSyscallExtractorPass::doInitialization(Module *M) {
             if (auto structType = dyn_cast<StructType>(g->getValueType())) {
                 auto structTypeName = structType->getName();
                 if (structTypeName == "struct.key_type") {
-                    outs() << *g << "\n";
+                    OP << *g << "\n";
                     auto structVal = getStructValue(g);
                     if (!structVal && Ctx->GlobalStructMap.count(g->getName().str())) {
                         structVal = getStructValue(Ctx->GlobalStructMap[g->getName().str()]);
@@ -61,13 +61,13 @@ bool CommonSyscallExtractorPass::doInitialization(Module *M) {
                             auto stringVal = constStruct->getOperand(Ctx->StructFieldIdx["key_type"]["name"]);
                             auto keyName = getDeviceString(stringVal);
                             if (keyName != "?") {
-                                outs() << "key: " << keyName << "\n";
+                                OP << "key: " << keyName << "\n";
                                 KeyNames.insert(keyName);
                             }
                         }
                     }
                 } else if (structTypeName == "struct.xattr_handler") {
-                    outs() << *g << "\n";
+                    OP << *g << "\n";
                     auto structVal = getStructValue(g);
                     if (!structVal && Ctx->GlobalStructMap.count(g->getName().str())) {
                         structVal = getStructValue(Ctx->GlobalStructMap[g->getName().str()]);
@@ -77,7 +77,7 @@ bool CommonSyscallExtractorPass::doInitialization(Module *M) {
                             auto stringVal = constStruct->getOperand(Ctx->StructFieldIdx["xattr_handler"]["name"]);
                             auto xattrName = getDeviceString(stringVal);
                             if (xattrName != "?") {
-                                outs() << "xattr: " << xattrName << "\n";
+                                OP << "xattr: " << xattrName << "\n";
                                 XattrNames.insert(xattrName);
                             }
                         }
@@ -186,7 +186,7 @@ void CommonSyscallExtractorPass::GetStringCmpInFuncArgImpl(Function* func, int a
                             }
                             auto argx = callInst->getArgOperand(i);
                             if (targetVal->find(argx) != targetVal->end()) {
-                                outs() << callee->getName() << " " << i << "\n";
+                                OP << callee->getName() << " " << i << "\n";
                                 GetStringCmpInFuncArgImpl(callee, i, targetVal, visited, comparedStr);
                             }
                         }
@@ -217,7 +217,7 @@ bool CommonSyscallExtractorPass::doModulePass(Module *M) {
                     if (ProcessedSyscall.count({funcName, syscall})) {
                         continue;
                     }
-                    outs() << syscall << " " << funcName << "\n";
+                    OP << syscall << " " << funcName << "\n";
                     vector<vector<int>> argMap = getArgMapByFunc(&func);
                     auto argConstMap = getTargetBlocksInFuncByArgMap(&func, argMap, syscall);
                     if (funcName == "__se_sys_keyctl") {
@@ -229,7 +229,7 @@ bool CommonSyscallExtractorPass::doModulePass(Module *M) {
                     for (auto item: argConstMap) {
                         auto idx = item.first;
                         auto basicBlockMap = item.second;
-                        outs() << "\t Arg " << idx << "\n";
+                        OP << "\t Arg " << idx << "\n";
                         if (StringCompareSyscallArg.count(syscall) && idx == StringCompareSyscallArg[syscall]) {
                             auto comparedStr = GetStringCmpInFuncArg(&func, idx);
                             argConstMap[idx] = ConstBlockMap();
@@ -238,10 +238,10 @@ bool CommonSyscallExtractorPass::doModulePass(Module *M) {
                             }
                             delete comparedStr;
                             if (SyscallStringSetMap.count(syscall)) {
-                                outs() << "TQL " << syscall << "\n";
+                                OP << "TQL " << syscall << "\n";
                                 auto strSet = SyscallStringSetMap[syscall];
                                 for (auto str: *strSet) {
-                                    outs() << str << "\n";
+                                    OP << str << "\n";
                                     argConstMap[idx].push_back(new CMDConst(nullptr, CastOpPath(), nullptr, nullptr, OperandPath(), str));
                                 }
                             }
@@ -249,7 +249,7 @@ bool CommonSyscallExtractorPass::doModulePass(Module *M) {
                         for (auto x: basicBlockMap) {
                             auto constant = x->value;
                             if (constant) {
-                                outs() << "\t\t" << constant->getZExtValue() << "\n";
+                                OP << "\t\t" << constant->getZExtValue() << "\n";
                             }
                         }
                     }

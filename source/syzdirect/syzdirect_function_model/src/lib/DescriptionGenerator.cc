@@ -336,7 +336,7 @@ void BasicBlockConstraint::SetConstraintToSyscall(SyscallInstance* instance) {
     set<Value*> dstValueSet;
     // check if the CFU src is in the CFUSet
     for (auto item: CFUSet) {
-        outs() << "CFU: " << *item << "\n";
+        OP << "CFU: " << *item << "\n";
         auto callInst = dyn_cast<CallInst>(item);
         auto src = callInst->getArgOperand(1);
         if (srcValueSet.count(src)) {
@@ -374,13 +374,13 @@ void BasicBlockConstraint::SetConstraintToSyscall(SyscallInstance* instance) {
 
     // get type of the dest ptr
     for (auto item: dstValueSet) {
-        outs() << *item << "\n";    
+        OP << *item << "\n";    
         if (item->getType()->isPointerTy()) {
             auto PETy = item->getType()->getPointerElementType();
             if (PETy->isStructTy()) {
                 structTys.insert(PETy);
             }
-            // outs() << "structTy: " << *structTy << "\n";  
+            // OP << "structTy: " << *structTy << "\n";  
         }
     }
 
@@ -390,7 +390,7 @@ void BasicBlockConstraint::SetConstraintToSyscall(SyscallInstance* instance) {
     } else {
         for (auto structTy: structTys) {
             auto structName = structTy->getStructName().substr(7).str(); // remove "struct."
-            outs() << "structName: " << structName;
+            OP << "structName: " << structName;
             if (auto structType = dyn_cast<StructType>(structTy)) {
                 instance->getArgs()->at(argIdx) = new Arg(name, str(boost::format("ptr[inout, %s]") % structName));
                 instance->getGenerator()->ExtractStructure(structName, structType);

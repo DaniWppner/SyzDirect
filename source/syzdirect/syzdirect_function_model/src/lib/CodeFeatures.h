@@ -112,12 +112,12 @@ vector<string> getNetDeviceNameByAllocNetdev();
 
 vector<CMDConst*> getValueInSwitchCase(Function* F);
 
-void handleSndSeqIoctl(Function* targetFucntion, InfoItem* info, raw_fd_ostream& outfile=outs());
-void handleAutofsDevIoctl(Function* targetFunction, InfoItem* info, raw_fd_ostream& outfile=outs());
+void handleSndSeqIoctl(Function* targetFucntion, InfoItem* info, raw_fd_ostream& outfile=OP());
+void handleAutofsDevIoctl(Function* targetFunction, InfoItem* info, raw_fd_ostream& outfile=OP());
 void handleUcmaWrite(Function* targetFunction, InfoItem* info, raw_fd_ostream& outfile);
 set<vector<BBConstraint*>> getBBConstraintsPathsInFunc(Function* F, set<Function*> visitedFunctions);
 
-vector<map<unsigned, ConstBlockMap>> getConstraintsWrapper(Function* F, map<unsigned, ConstBlockMap>& argConstMap, raw_fd_ostream& outfile=outs());
+vector<map<unsigned, ConstBlockMap>> getConstraintsWrapper(Function* F, map<unsigned, ConstBlockMap>& argConstMap, raw_fd_ostream& outfile=OP());
 
 map<BasicBlock*, vector<map<unsigned, ConstBlockMap>>> getConstraintsWrapperNew(Function* F, map<unsigned, ConstBlockMap>& argConstMap, raw_fd_ostream& outfile);
 
