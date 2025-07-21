@@ -36,7 +36,7 @@ index 6b8368be89c8..884018fbf7f2 100644
  /* Number of 64-bit words written per one comparison: */
  #define KCOV_WORDS_PER_CMP 4
  
-++#define DISTBLOCKSIZE 300
++#define DISTBLOCKSIZE 300
 +
  /*
   * kcov descriptor (one per opened debugfs file).

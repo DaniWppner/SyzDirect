@@ -18,7 +18,7 @@ def PrepareSourceCode():
         checkoutcmd=f"cd {caseSrcDir} && git checkout -f {kernel_commit}"
         Config.ExecuteCMD(checkoutcmd)
         
-        patch_path = Config.CustomKcovPatch if Config.CustomKcovPatch is not None else Conf.KcovPatchPath
+        patch_path = Config.CustomKcovPatch if Config.CustomKcovPatch is not None else Config.KcovPatchPath
         applykcovcmd=f"cd {caseSrcDir} && git apply {patch_path}"
         applly_patch_error = Config.ExecuteCMD(applykcovcmd)[1]
         if applly_patch_error:
@@ -86,8 +86,8 @@ exec $CLANG "$@"
             f.writelines("\nCONFIG_KCOV=y\n")
 
         
-        
-        compile_command = f"cd {Config.getSrcDirByCase(caseIdx)} && git checkout -- scripts/Makefile.kcov && make clean && make mrproper && make CC={Config.EmitScriptPath} O={caseBCDir} olddefconfig && make CC=\'{Config.EmitScriptPath}\' O={caseBCDir} -j{Config.CPUNum}"
+        llvm_toolchain_options = f"CC={Config.EmitScriptPath} HOSTCC={Config.ClangPath} LD={Config.LLVMBinDir}/ld.lld AR={Config.LLVMBinDir}/llvm-ar NM={Config.LLVMBinDir}/llvm-nm STRIP={Config.LLVMBinDir}/llvm-strip OBJCOPY={Config.LLVMBinDir}/llvm-objcopy OBJDUMP={Config.LLVMBinDir}/llvm-objdump READELF={Config.LLVMBinDir}/llvm-readelf HOSTCXX={Config.LLVMBinDir}/clang++ HOSTAR={Config.LLVMBinDir}/llvm-ar HOSTLD={Config.LLVMBinDir}/ld.lld"
+        compile_command = f"cd {Config.getSrcDirByCase(caseIdx)} && git checkout -- scripts/Makefile.kcov && make clean && make mrproper && make {llvm_toolchain_options} O={caseBCDir} olddefconfig && make {llvm_toolchain_options} O={caseBCDir} -j{Config.CPUNum}"
         # print(Config.ExecuteCMD(compile_command))
         Config.ExecuteBigCMD(compile_command)
         if IsCompilationSuccessfulByCase(caseBCDir):

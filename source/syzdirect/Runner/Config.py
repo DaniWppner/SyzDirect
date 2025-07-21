@@ -83,12 +83,13 @@ def LoadJson(fn):
 def PreparePathVariables():
 
     ################### resources provided by us ##################
-    global KcovPatchPath,LLVMRootDir,LLVMBuildDir,ClangPath,BigConfigPath,TemplateConfigPath,FuzzerDir,FuzzerBinDir,SyzManagerPath,SyzTRMapPath,SyzFeaturePath
+    global KcovPatchPath,LLVMRootDir,LLVMBuildDir,LLVMBinDir,ClangPath,BigConfigPath,TemplateConfigPath,FuzzerDir,FuzzerBinDir,SyzManagerPath,SyzTRMapPath,SyzFeaturePath
     ResourceRoot=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     KcovPatchPath=os.path.join(ResourceRoot,"kcov.diff")
     LLVMRootDir=os.path.join(ResourceRoot,"..","llvm-project-new")
     LLVMBuildDir=os.path.join(LLVMRootDir,"build")
-    ClangPath=os.path.join(LLVMBuildDir,"bin/clang")
+    LLVMBinDir=os.path.join(LLVMBuildDir,"bin")
+    ClangPath=os.path.join(LLVMBinDir,"clang")
     BigConfigPath=os.path.join(ResourceRoot,"bigconfig")
     TemplateConfigPath=os.path.join(ResourceRoot,"template_config")
     FuzzerDir=os.path.join(ResourceRoot,"syzdirect_fuzzer")
@@ -229,7 +230,7 @@ def PrepareBinary():
     ### LLVM
     if not os.path.exists(ClangPath):
         logging.info("Automatically build customized llvm")
-        makecmd=f'cd {LLVMRootDir} && cmake -S llvm -B build -DLLVM_ENABLE_PROJECTS=clang -DCMAKE_BUILD_TYPE=Release && cmake --build build -j {CPUNum}' 
+        makecmd=f'cd {LLVMRootDir} && cmake -S llvm -B build -DLLVM_ENABLE_PROJECTS="clang;lld" -DCMAKE_BUILD_TYPE=Release && cmake --build build -j {CPUNum}'
         # print(ExecuteCMD(makecmd)[0])
         ExecuteBigCMD(makecmd)
     assert os.path.exists(ClangPath), "Fails to build customized llvm(clang)"
