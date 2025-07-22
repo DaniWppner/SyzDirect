@@ -30,7 +30,7 @@ map<string, vector<int>> getArgMapFromFile()
     ifstream argMapFile(filePath, ios::in);
     if(!argMapFile.is_open())
     {
-        OP << "target file is not opened" << endl;
+        OP << "target file is not opened\n";
         return res;
     }
     while(getline(argMapFile, line))
