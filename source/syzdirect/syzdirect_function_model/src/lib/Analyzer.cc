@@ -360,41 +360,51 @@ int main(int argc, char **argv) {
 	}
 
 
+  INFO("get ArgMap from file.\n")
   GlobalCtx.FunctionArgMap = getArgMapFromFile();
 	// Main workflow
 	// Initilaize global type map
+  INFO("initialize global type map.\n")
 	TypeInitializerPass TIPass(&GlobalCtx);
 	TIPass.run(GlobalCtx.Modules);
 	TIPass.BuildTypeStructMap();
 
+  INFO("pointer analysis.\n")
   // Pointer analysis
   PointerAnalysisPass PAPass(&GlobalCtx);
   PAPass.run(GlobalCtx.Modules);
 
-	// Build global callgraph.
+  INFO("build global callgraph.\n")
+  // Build global callgraph.
 	CallGraphPass CGPass(&GlobalCtx);
 	CGPass.run(GlobalCtx.Modules);
 
+  INFO("get information from the debug info.\n")
   // Get information from the debug info
   DbgInfoHelperPass DIHPass(&GlobalCtx);
   DIHPass.run(GlobalCtx.Modules);
 
+  INFO("find all the fops structs.\n")
   // Find All the fops structs
   FopsFinderPass FFPass(&GlobalCtx);
   FFPass.run(GlobalCtx.Modules);
 
+  INFO("find the common syscalls.\n")
   // Find the common syscall
   CommonSyscallExtractorPass CSEPass(&GlobalCtx);
   CSEPass.run(GlobalCtx.Modules);
 
+  INFO("devide extract.\n")
   // Device extract
   DeviceExtractorPass DEPass(&GlobalCtx);
   DEPass.run(GlobalCtx.Modules);
 
+  INFO("filesystem extract.\n")
   // Filesystem extract
   FilesystemExtractorPass FSEPass(&GlobalCtx);
   FSEPass.run(GlobalCtx.Modules);
 
+  INFO("network interface extract.\n")
   // // Network interface extract
   NetworkInterfaceExtractorPass NIEPass(&GlobalCtx);
   NIEPass.run(GlobalCtx.Modules);
@@ -422,7 +432,7 @@ int main(int argc, char **argv) {
   // }
 
   string generatorConfigureLocation = std::string(GeneratorConfigureLocation);
-
+  DEBUG("big loop [1]\n")
   if (generatorConfigureLocation != "") {
     Generator* generator = new Generator(&GlobalCtx);
     ifstream configFile(generatorConfigureLocation, ios::in|ios::binary);
@@ -509,6 +519,7 @@ int main(int argc, char **argv) {
     exit(0);
   }
   
+  DEBUG("big loop [2]\n")
   for (auto item: GlobalCtx.SubsystemInfo) {
     switch (item->ItemType) {
       
@@ -587,6 +598,7 @@ int main(int argc, char **argv) {
 
 
 
+  DEBUG("big loop [3]\n")
   unordered_map<string, unordered_map<Function*, bool>> TerminatorHandlerCandidates = unordered_map<string, unordered_map<Function*, bool>>();
   map<Function*, vector<InfoItem*>> funcInfoItemMap;
   vector<NetlinkInfoItem*> specialHandleList;
@@ -689,7 +701,7 @@ int main(int argc, char **argv) {
         break;
     }
   }
-
+  DEBUG("big loop [4]\n")
   map<string, set<string>> allDeviceName;
 
   unsigned dfsStartBBNum = 0;
@@ -803,6 +815,7 @@ int main(int argc, char **argv) {
     {"sendmsg", {"sendmsg", 0}},
   };
 
+  DEBUG("big loop [5]\n")
   for (auto item: GlobalCtx.SubsystemInfo) {
     switch (item->ItemType) {
       case NETWORK:
@@ -855,6 +868,7 @@ int main(int argc, char **argv) {
     // {"fsetxattr", "D"},
   };
 
+  DEBUG("big loop [6]\n")  
   for (auto item: TerminatorHandlerCandidates) {
     GlobalCtx.FoundFunctionCache = map<Function*, map<unsigned, ConstBlockMap>>();
     auto syscall = item.first;
@@ -1235,6 +1249,7 @@ int main(int argc, char **argv) {
     }
   }
 
+  DEBUG("DONE\n")  
   for(auto netlinkInfoItem:specialHandleList)
   {
     vector<string> res = netlinkInfoItem->generateSendmsgSignature();
