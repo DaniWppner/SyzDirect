@@ -1,7 +1,9 @@
 services:
-  syzdirect-environment:
-    build: .
-    container_name: syzdirect-environment
+  syzdirect-environment-debian-bookworm:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: syzdirect-environment-bookworm
     stdin_open: true 
     tty: true
     working_dir: /src
@@ -11,4 +13,17 @@ services:
       - /path/to/SyzDirect:/src/SyzDirect:z
       - /path/to/kernel_image:/src/kernelimage:z
     restart: "no"
-    
+  syzdirect-environment-ubuntu-focal:
+    build:
+      context: .
+      dockerfile: ./Dockerfile-focal
+    container_name: syzdirect-environment-focal
+    stdin_open: true
+    tty: true
+    working_dir: /src
+    entrypoint: /usr/bin/bash
+    volumes:
+      - /path/to/linux:/src/linux:z
+      - /path/to/SyzDirect:/src/SyzDirect:z
+      - /path/to/kernel_image:/src/kernelimage:z
+    restart: "no"

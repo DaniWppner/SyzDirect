@@ -1,0 +1,43 @@
+# This Dockerfile is meant to provide an environment to compile the infrastructure from SyzDirecct
+# This includes LLVM packages, which can be run from the container, and the Syzkaller fork.
+
+FROM ubuntu:focal-20250404
+# Based on sample Dockerfile by LLVM Developers and syz-env Dockerfile from Syzkaller project.
+LABEL maintainer="danielituswapp@gmail.com"
+
+# Install build dependencies of LLVM.
+# Update the apt's source list and include the sources of the packages.
+RUN grep deb /etc/apt/sources.list | \
+    sed 's/^deb/deb-src /g' >> /etc/apt/sources.list
+
+# Install compiler, python, subversion, c++ libraries and wget,curl,etc. utilities.
+RUN TZ=AR DEBIAN_FRONTEND=noninteractive apt-get update && \
+    TZ=AR DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates gnupg \
+           # These are needed to build LLVM
+           build-essential cmake make zlib1g wget subversion unzip git \
+           # These are needed to build Linux kernel
+           flex bison bc libelf-dev libssl-dev \
+           # These are needed to build Syzdirect or Syzkaller
+           curl libboost-dev python3 python3-pip file \
+           # These are needed to run the LLVM instalation script
+           gpg lsb-release software-properties-common
+
+# Install LLVM toolchain v13 itself
+RUN wget https://apt.llvm.org/llvm.sh && \
+    chmod +x llvm.sh && \
+    ./llvm.sh 13 all && \
+    rm ./llvm.sh
+
+# Clean apt-get data
+RUN rm -rf /var/lib/apt/lists/*
+
+# Install python dependencies of SyzDirect
+COPY ./requirements.txt /src/requirements.txt
+WORKDIR /src
+RUN pip install -r requirements.txt
+
+# Install go toolchain to build Syzkaller fork
+RUN curl https://dl.google.com/go/go1.24.4.linux-amd64.tar.gz | tar -C /usr/local -xz
+ENV PATH /usr/local/go/bin:/gopath/bin:$PATH
+ENV GOPATH /gopath
+ENV GOMODCACHE /src/.cache/gomod
